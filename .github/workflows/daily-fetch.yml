@@ -1,0 +1,46 @@
+name: Daily Commit Fetch & Translate
+
+on:
+  schedule:
+    # 北京时间 9:43 = UTC 01:43
+    - cron: "43 1 * * *"
+  workflow_dispatch:  # 允许手动触发测试
+  push:
+    branches: [main]
+    paths:
+      - "fetch_and_translate.py"  # 脚本更新时自动跑一次
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # 需要 push 权限
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run fetch & translate
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: python fetch_and_translate.py
+
+      - name: Commit & push results
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # 只提交 output 目录
+          git add output/
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "📋 Daily update $(date +%Y-%m-%d)"
+            git push
+          fi
