@@ -15,6 +15,9 @@ REPOS = [
 OUTPUT_DIR = "output"
 DEEPSEEK_KEY = os.environ.get("DEEPSEEK_API_KEY", "")
 
+# 邮件配置（可选，不设置就不发邮件）
+EMAIL_ENABLED = all(os.environ.get(k) for k in ["SMTP_SERVER", "SMTP_USER", "SMTP_PASS", "EMAIL_TO"])
+
 # ── 1. 拉取 commits ───────────────────────────────────────────
 def fetch_commits(owner_repo: str, since_iso: str) -> list[dict]:
     """从 GitHub API 拉取 24h 内的 commits"""
@@ -143,6 +146,45 @@ def raw_report(repo_name: str, commits: list[dict]) -> str:
     return "\n".join(lines)
 
 
+# ── 3.5 邮件发送 ───────────────────────────────────────────────
+def send_email(subject: str, body: str):
+    """通过 SMTP 发送邮件报告"""
+    import smtplib
+    from email.mime.text import MIMEText
+    from email.mime.multipart import MIMEMultipart
+
+    smtp_server = os.environ["SMTP_SERVER"]
+    smtp_port = int(os.environ.get("SMTP_PORT", "587"))
+    smtp_user = os.environ["SMTP_USER"]
+    smtp_pass = os.environ["SMTP_PASS"]
+    email_to = os.environ["EMAIL_TO"]
+
+    msg = MIMEMultipart("alternative")
+    msg["Subject"] = subject
+    msg["From"] = smtp_user
+    msg["To"] = email_to
+
+    # 纯文本版本
+    msg.attach(MIMEText(body, "plain", "utf-8"))
+
+    # 简易 HTML 版本（把 markdown 的 ## 转成 <h2>，链接转成 <a>）
+    html_body = body
+    html_body = re.sub(r"^### (.+)$", r"<h3>\1</h3>", html_body, flags=re.MULTILINE)
+    html_body = re.sub(r"^## (.+)$", r"<h2>\1</h2>", html_body, flags=re.MULTILINE)
+    html_body = re.sub(r"^# (.+)$", r"<h1>\1</h1>", html_body, flags=re.MULTILINE)
+    html_body = re.sub(r"\[([^\]]+)\]\(([^)]+)\)", r'<a href="\2">\1</a>', html_body)
+    html_body = re.sub(r"\n- ", r"\n<li>", html_body)
+    html_body = re.sub(r"\n\n", r"<br><br>", html_body)
+    html_body = f"<html><body><pre style='white-space:pre-wrap;font-family:system-ui,sans-serif'>{html_body}</pre></body></html>"
+    msg.attach(MIMEText(html_body, "html", "utf-8"))
+
+    with smtplib.SMTP(smtp_server, smtp_port, timeout=30) as server:
+        server.starttls()
+        server.login(smtp_user, smtp_pass)
+        server.sendmail(smtp_user, email_to, msg.as_string())
+    print(f"📧 Email sent to {email_to}")
+
+
 # ── 4. 主流程 ──────────────────────────────────────────────────
 def main():
     now = datetime.now(timezone.utc)
@@ -198,6 +240,17 @@ def main():
 
     print(f"\n✅ Written to {daily_path} and {latest_path}")
     print(f"   Total size: {len(content)} chars")
+
+    # 发送邮件（如果配置了 SMTP）
+    if EMAIL_ENABLED:
+        print(f"📧 Sending email ...")
+        try:
+            send_email(
+                f"🚀 vLLM & SGLang 每日更新 — {today_str}",
+                content,
+            )
+        except Exception as e:
+            print(f"   ⚠ Email failed: {e}")
 
 
 if __name__ == "__main__":
