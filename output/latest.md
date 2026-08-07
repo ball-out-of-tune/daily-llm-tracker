@@ -1,212 +1,186 @@
 # 🚀 vLLM & SGLang 每日更新 — 2026-08-07
 
-> 自动生成于 2026-08-07 14:59 UTC | AI 解读: ❌ 仅原始数据
+> 自动生成于 2026-08-07 15:04 UTC | AI 解读: ✅
 
-## vllm — 最近 24h commits
+## vllm
+## 🔥 重要更新（如果有的话）
 
-- **[[Bugfix] Fix get_open_port() livelock on DP-reserved ports and cover get_open_ports_list (#50965)](https://github.com/vllm-project/vllm/commit/448344c0e29383adfe606a5c7ede72dd74705321)** — aoshen02
-  `448344c0` 2026-08-07T14:39:33Z
-- **[[Bugfix][KV-transfer] MoRIIO: per-layer READ-completion barrier in wait_for_layer_load (#48534)](https://github.com/vllm-project/vllm/commit/47228db84ce59321e6e464f20fabe0ef86e6aef5)** — limeward
-  `47228db8` 2026-08-07T14:23:33Z
-- **[[PD][NixlPush][Bugfix] Fix prefix caching (#48758)](https://github.com/vllm-project/vllm/commit/d4ecb75ba2f53a1e445cf5ac277ea8a5e78d516b)** — Nicolò Lucchesi
-  `d4ecb75b` 2026-08-07T14:21:17Z
-- **[[Model] Enable Qwen3.8 for AMD Rocm (#50068)](https://github.com/vllm-project/vllm/commit/f2bfad9167a29e963f29f9ea79f2811513566ea6)** — haic0
-  `f2bfad91` 2026-08-07T13:19:07Z
-- **[[Bugfix] Skip fetching revision for model when model and weights_model are different (#51260)](https://github.com/vllm-project/vllm/commit/a231c5ceac87451b6dcf5ccdf0eef7a3634bc5d4)** — music-dino
-  `a231c5ce` 2026-08-07T12:55:50Z
-- **[Fix ROCm architecture import on non-ROCm platforms (#51357)](https://github.com/vllm-project/vllm/commit/d5aae2b4641c5091e604e235617e51e60a564710)** — Xiaochang Wu
-  `d5aae2b4` 2026-08-07T12:32:56Z
-- **[feat: extended EPLB support for Mistral Large 3 and additional MoE backends (#48355)](https://github.com/vllm-project/vllm/commit/ae934ba8a5577c580c33e3489290ff7d8bf1f83e)** — Julien Debache
-  `ae934ba8` 2026-08-07T12:32:52Z
-- **[[XPU] quick fix online quantization UT break (#51365)](https://github.com/vllm-project/vllm/commit/8d9b52f7c2514490bdadfd5eb0c931e58625df2e)** — Yan Ma
-  `8d9b52f7` 2026-08-07T10:25:31Z
-- **[[Misc] Add and enable Triton kernel unit tests on XPU (#45694)](https://github.com/vllm-project/vllm/commit/6b5bec7bedffa949fbd393fce720faf35831d746)** — pmanczak
-  `6b5bec7b` 2026-08-07T09:53:03Z
-- **[[PD][PushConnector] Record last activity of remotes to allow clean up of stale ones (#50234)](https://github.com/vllm-project/vllm/commit/5ec47f3e48e7f6da9b6caa1c804b3887f832a788)** — Nicolò Lucchesi
-  `5ec47f3e` 2026-08-07T09:43:29Z
-- **[[Bugfix][Platform] Stop re-initializing NVML on every device-capability check (fixes #50381) (#50393)](https://github.com/vllm-project/vllm/commit/4f76c8ad9d8ec06e91ac9c84895e07a1913d7726)** — Sebastian Woo
-  `4f76c8ad` 2026-08-07T08:30:00Z
-- **[[Bugfix][Quantization] Fix dynamic INT8 W8A8 MoE config being built as W8A16 (#50833)](https://github.com/vllm-project/vllm/commit/b8db7f4abd2c864d5a7045b6d36fa36c2c7bb1e1)** — Hank_
-  `b8db7f4a` 2026-08-07T08:21:13Z
-- **[[Refactor] Remove kernel dead code (#51051)](https://github.com/vllm-project/vllm/commit/c84789c40b506a40d6a1ec15a704d53397c564a6)** — Wentao Ye
-  `c84789c4` 2026-08-07T08:20:19Z
-- **[Support DeepSeek-V4 AMD Quark NVFP4 with emulation kernel  (#47972)](https://github.com/vllm-project/vllm/commit/da788334bc0683cc44a58b4624e3f5a3c09a09e0)** — jimmy-adams
-  `da788334` 2026-08-07T08:19:31Z
-- **[[ROCm][CI] Loosen block-FP8 fused MoE test tolerance for large-K shapes (#48847)](https://github.com/vllm-project/vllm/commit/0de0362ea1c69b93f9ed36126a1b5c94f0ce2f22)** — stefankoncarevic
-  `0de0362e` 2026-08-07T08:19:26Z
-- **[[Feat][Core] Add disk offloading support to SimpleCPUOffloadConnector (#49644)](https://github.com/vllm-project/vllm/commit/58fcaa0baaa32ba0c34e1119f6ce4554ef8a6256)** — Guanyi Chen
-  `58fcaa0b` 2026-08-07T07:37:47Z
-- **[[rl] Stateful Trainer Send: NCCL + Sparse NCCL [3/N] (#50902)](https://github.com/vllm-project/vllm/commit/21ea5b4fa1062a379dd7e6795497ad6becd5a856)** — Aaron Hao
-  `21ea5b4f` 2026-08-07T07:35:59Z
-- **[[ROCm][Perf] Kimi-K3 Shard Latent MoE up-projection for ROCm path (#51253)](https://github.com/vllm-project/vllm/commit/43d691ec6b1d26d3ef3d8725a7c7e4d8556eb984)** — kliuae
-  `43d691ec` 2026-08-07T06:11:18Z
-- **[[CI][XPU] Work around intermittent segfault in Intel XPU CI with VLLM_DISABLE_COMPILE_CACHE=1 (#51337)](https://github.com/vllm-project/vllm/commit/b706fd1628b06c216a945176a9fedfa808324803)** — Chaojun Zhang
-  `b706fd16` 2026-08-07T05:18:25Z
-- **[[Bugfix] Fix Mamba all-mode CPU offload boundary alignment (#51100)](https://github.com/vllm-project/vllm/commit/c810e5ee9976ad86b81d1277b53e76d0ee639414)** — Qianxu Wang
-  `c810e5ee` 2026-08-07T04:37:48Z
-- **[[Bugfix][EPD][Model Runner V2] Skip gather mm embeddings for encoder only instance (#51222)](https://github.com/vllm-project/vllm/commit/dd856e48bbf969e3f0e561e8c76f6e92c76e0795)** — Tianyu Guo
-  `dd856e48` 2026-08-07T03:40:47Z
-- **[[Feat] Support thinking_token_budget in Model Runner V2 (#46727)](https://github.com/vllm-project/vllm/commit/72c0d6765793e4c7242c3586274af3e1a8aca170)** — Chauncey
-  `72c0d676` 2026-08-07T03:36:18Z
-- **[[CI] Re-enable FI autotune in GSM8K config for Qwen3.5-35B-A3B (#51293)](https://github.com/vllm-project/vllm/commit/5ac2684976ee22c04fe0d2f968c6cf6096b383f2)** — Artem Perevedentsev
-  `5ac26849` 2026-08-07T02:42:34Z
-- **[fix pre-commit broken (#51341)](https://github.com/vllm-project/vllm/commit/0406ba22c431e5fd2000165b594323f5afa312a2)** — Kunshang Ji
-  `0406ba22` 2026-08-07T01:17:39Z
-- **[[Kernel] Support Nvfp4 Cutedsl Moe Swiglu-oai and Relu2(non-gated) Activation (#47106)](https://github.com/vllm-project/vllm/commit/e08111211bc94f5e7f5ebd0f071ef5300f6f5564)** — Bi Tiekai
-  `e0811121` 2026-08-07T00:42:45Z
-- **[[V1] Copy NaN-in-logits counts to host asynchronously (#51304)](https://github.com/vllm-project/vllm/commit/b1e12d142d8c9533f857f8da13d8fc368e95a8cd)** — Nick Hill
-  `b1e12d14` 2026-08-07T00:05:03Z
-- **[[CI] Exclude KV-connector subtree from broad source dependencies (#51046)](https://github.com/vllm-project/vllm/commit/d35eb6c44071ea806018841c490f0d2f3219c485)** — Nicolò Lucchesi
-  `d35eb6c4` 2026-08-06T23:51:10Z
-- **[[Quantization] Share online weight scales across TP (#49764)](https://github.com/vllm-project/vllm/commit/8170c23c4fa36ffdc5890e5df46b4825fd9d0745)** — Matej Sirovatka
-  `8170c23c` 2026-08-06T23:34:33Z
-- **[[Model Runner V2] Fix -1 placeholder draft token ids in rejection sam… (#50939)](https://github.com/vllm-project/vllm/commit/27930df9c2bd14047be35ff2a986ca72fc65631a)** — Giancarlo Delfin
-  `27930df9` 2026-08-06T23:32:00Z
-- **[docs(governance): refresh committers list, add TSC note, update project leads (#51300)](https://github.com/vllm-project/vllm/commit/9bca7d840d7fa4677e58e7d163ddd191cccc40b7)** — Simon Mo
-  `9bca7d84` 2026-08-06T23:28:17Z
-- **[[ModelRunner v2] Enable decoder token-wise pooling (#50931)](https://github.com/vllm-project/vllm/commit/946452961265514622b95ea170839b214f39c2a0)** — Taneem Ibrahim
-  `94645296` 2026-08-06T22:21:52Z
-- **[fix: resolve silent request skipping in PRIORITY scheduling (#49206)](https://github.com/vllm-project/vllm/commit/4d341ca829d7fbad351b3a5a17d1405e63dc5bf2)** — Tejas
-  `4d341ca8` 2026-08-06T22:21:21Z
-- **[[Misc] Upgrade fastsafetensors version, fix metadata is null (#50827)](https://github.com/vllm-project/vllm/commit/a07086e4032e66aacae60ac2fc01e738096e9569)** — rongfu.leng
-  `a07086e4` 2026-08-06T21:48:56Z
-- **[[ModelRunner V2] Minor indexing optimizations (#51210)](https://github.com/vllm-project/vllm/commit/c5d470ac4ccd17ac9663db0d1c0e2060e5ae15ad)** — Nick Hill
-  `c5d470ac` 2026-08-06T21:44:13Z
-- **[[Bugfix] Fix packed KV block zeroing stride (#50276)](https://github.com/vllm-project/vllm/commit/d6af803f434397222674e8ea5cc6f25b3a208e62)** — wangxian001
-  `d6af803f` 2026-08-06T20:49:06Z
-- **[[Mypy Fix] Mypy fix for "vllm/model_executor/models/[aA][bB]" (#48977)](https://github.com/vllm-project/vllm/commit/adc3e03517d2e7333a3bb2083bb4d394a2986876)** — Wentao Ye
-  `adc3e035` 2026-08-06T19:30:15Z
-- **[[ROCm][MLA] Use asm decode for non-divisor small head counts (#50578)](https://github.com/vllm-project/vllm/commit/d8eabdbfbe93ecc8a8d5cb8a55c5067a443a8796)** — vanshbhatia-amd
-  `d8eabdbf` 2026-08-06T18:56:53Z
-- **[[Frontend] Watch frontend processes during engine startup (#43417)](https://github.com/vllm-project/vllm/commit/7b9f2dad8920f115c1caea36e096e43c04c3da68)** — Bugen Zhao
-  `7b9f2dad` 2026-08-06T18:17:24Z
-- **[[ROCm][CI] Update AITER AR+RMS e2e fusion counts for final-norm coverage (#51273)](https://github.com/vllm-project/vllm/commit/4f851bef6c4ef3a691aa19f798b220819d19dde4)** — Divakar Verma
-  `4f851bef` 2026-08-06T18:05:16Z
-- **[[Bugfix] Keep mamba align prefill chunks block-aligned past last_cache_position (#51113)](https://github.com/vllm-project/vllm/commit/c56f169d9ae46ca420617e2cf5f0c9135da0f651)** — Yifan Qiao
-  `c56f169d` 2026-08-06T17:21:00Z
-- **[[Weight processing] Copy over `new_data` attributes in `replace_parameter` (#49601)](https://github.com/vllm-project/vllm/commit/81be2e09aebfd1c45b3ed9f73d2850da8a72984c)** — fxmarty-amd
-  `81be2e09` 2026-08-06T17:03:37Z
-- **[[Attention][MLA] Per-request scheduling for MLA chunked context (#50613)](https://github.com/vllm-project/vllm/commit/b38e111d3e4806a553ec2798e2b075da7a8b03d3)** — Matthew Bonanni
-  `b38e111d` 2026-08-06T16:45:44Z
-- **[Fully generalise input embedding handling in Transformers modelling backend (#51247)](https://github.com/vllm-project/vllm/commit/e7b8d5946095a594af2cf7ca3c314b9806cb7c32)** — Harry Mellor
-  `e7b8d594` 2026-08-06T16:21:24Z
-- **[[CI] Run basic fullgraph correctness on one GPU (#51271)](https://github.com/vllm-project/vllm/commit/566c80edf9e770524b1506a9d681922d4601c70c)** — Michael Goin
-  `566c80ed` 2026-08-06T16:09:30Z
-- **[attn_res kernel latency improvements (#50185)](https://github.com/vllm-project/vllm/commit/7b4ed49628abd7860a435d6798feef76a944cb02)** — gnovack
-  `7b4ed496` 2026-08-06T15:53:20Z
-- **[Update vllm to point to flash-attention commit that builds FA3 with torch stable API. (Retry) (#49599)](https://github.com/vllm-project/vllm/commit/41e7746b82b43dd3454cd842d1bcfc30665eddb2)** — Chris Leonard
-  `41e7746b` 2026-08-06T15:37:46Z
-- **[[VocabParallelEmbedding] fix extra_repr fields concat (#51224)](https://github.com/vllm-project/vllm/commit/62a86318de3655f970baf7c2ff89c81a72c1a1b3)** — Ning Xie
-  `62a86318` 2026-08-06T12:22:18Z
-- **[Remove the XPU branch of topk_softplus_sqrt (#51242)](https://github.com/vllm-project/vllm/commit/1e05b21d61e6126e4811313f39c961bf8b314470)** — Liangqiusong
-  `1e05b21d` 2026-08-06T12:18:45Z
-- **[[Bugfix][KV Offload] Clean up resources after initialization failure (#51227)](https://github.com/vllm-project/vllm/commit/46e6a83ce12b5968d956279a1bd4611de16d69eb)** — AlexHuang
-  `46e6a83c` 2026-08-06T11:42:13Z
-- **[[Bugfix][Model] Add missing fused_qkv_a_proj to Kimi-Linear packed_modules_mapping (#51249)](https://github.com/vllm-project/vllm/commit/5fba75aefeedcf5b6cc27abf9bc145b6a49873a7)** — yjz
-  `5fba75ae` 2026-08-06T11:39:17Z
+本周没有对普通用户影响特别巨大的“重磅更新”，但有几个值得关注的趋势：**AMD ROCm 支持持续增强**（多个模型和优化适配）、**Model Runner V2 加速推进**（多个功能补齐与优化）、以及 **KV 传输/卸载相关 Bug 修复**（分布式场景稳定性提升）。
 
-## sglang — 最近 24h commits
+---
 
-- **[[diffusion] Enable breakable CUDA graph for LTX-2 (H200 two-stage e2e 10.75 s -> 6.90 s, 1.56x) (#33885)](https://github.com/sgl-project/sglang/commit/d4be483efb2674385d39774232c11e4135217ea6)** — Xiaoyu Zhang
-  `d4be483e` 2026-08-07T14:29:14Z
-- **[[diffusion] feat: make scheduler rpc deadlines explicit (#33965)](https://github.com/sgl-project/sglang/commit/bc148dfdc8478bcc438e5200eb5c12ad05d0c9bb)** — Yifei Suo
-  `bc148dfd` 2026-08-07T13:33:23Z
-- **[Fix vae fast path test after the gate refactor (#33983)](https://github.com/sgl-project/sglang/commit/bc8c0370415547726d07081b05cfaabf9c65e306)** — Ke Bao
-  `bc8c0370` 2026-08-07T12:45:19Z
-- **[Fix Nemotron W4A16 NVFP4 MoE backend (#33543)](https://github.com/sgl-project/sglang/commit/4020bc95a7b5b88b8de5f354f4850a9b1f881298)** — danielafrimi
-  `4020bc95` 2026-08-07T12:00:28Z
-- **[[diffusion] UX: speed up tp and fsdp checkpoint loading (#33960)](https://github.com/sgl-project/sglang/commit/5ca734fc3d0e314fb0b0993f9f7bbcd5a991bdb5)** — Mick
-  `5ca734fc` 2026-08-07T11:23:30Z
-- **[[diffusion] fix: bind each rank to accelerator before distributed init (#33054)](https://github.com/sgl-project/sglang/commit/1034977318ea4f113142ba57f6fe7ac379e61630)** — Dayananda V
-  `10349773` 2026-08-07T11:01:58Z
-- **[[diffusion] fix: enable bcg with tp (#33421)](https://github.com/sgl-project/sglang/commit/acb64db9e27e8c6969fb1c69748e514d1375c68c)** — Yihao Wang
-  `acb64db9` 2026-08-07T11:01:05Z
-- **[Fix IndexError in Triton backend with pipeline parallelism (#30340)](https://github.com/sgl-project/sglang/commit/fe52b49827e6560692d0c6b7dff2a719f5731fde)** — Dayananda V
-  `fe52b498` 2026-08-07T10:58:04Z
-- **[[diffusion] feat: gate /health and /health_generate on warmup completion and add liveness endpoint (#33787)](https://github.com/sgl-project/sglang/commit/7af3d000f294f230e3b277ceeb022aaf6e16147f)** — Lennox Fu
-  `7af3d000` 2026-08-07T09:59:23Z
-- **[[diffusion] model: support lingbot-video moe 30b t2v (#32341)](https://github.com/sgl-project/sglang/commit/a42683eb629b0aed12e34bd4f2d5a59c61098dc6)** — Pan Li
-  `a42683eb` 2026-08-07T09:57:01Z
-- **[[diffusion] feat: make ring admission a backend capability (#33928)](https://github.com/sgl-project/sglang/commit/13938fed3f06a8df06f23961bc338b911066dd61)** — Mick
-  `13938fed` 2026-08-07T09:55:44Z
-- **[[diffusion] perf: build qwen's masked varlen metadata host-side (#33954)](https://github.com/sgl-project/sglang/commit/28b43bf693a8d93d9241ef0a71a11eb245f6f3de)** — Mick
-  `28b43bf6` 2026-08-07T09:55:15Z
-- **[Move SWA chunk-cap hatch tests into the registered suite (#33975)](https://github.com/sgl-project/sglang/commit/0756a1d2b070bb98f6c788c4c4c7346c68da164a)** — Ke Bao
-  `0756a1d2` 2026-08-07T09:49:07Z
-- **[[NPU] [DOC] Upgrade recommendeded sglang version on Ascend NPU (#33976)](https://github.com/sgl-project/sglang/commit/470807ef746977b2e6a9170ffe72b3fd551e771f)** — amote-i
-  `470807ef` 2026-08-07T09:45:00Z
-- **[[diffusion] Z-Image bit-exact fused qk-norm (H200 Turbo 1024px e2e -6.4%) (#33886)](https://github.com/sgl-project/sglang/commit/572434e2f6a855725fc4f56977f36f2e222ac939)** — Xiaoyu Zhang
-  `572434e2` 2026-08-07T09:03:28Z
-- **[Fix prefill CP graph overflow with larger bucket search (#33906)](https://github.com/sgl-project/sglang/commit/5e60363960db96d56b519617d7a75be871f15a0e)** — Baizhou Zhang
-  `5e603639` 2026-08-07T08:33:14Z
-- **[[CI] Share VLM engines and prune launch matrices on the per-commit H100/H200 suites (#33944)](https://github.com/sgl-project/sglang/commit/7395ee833e61c62b8928bd2a6cab4b825313e2f1)** — Liangsheng Yin
-  `7395ee83` 2026-08-07T08:22:22Z
-- **[feat: Add flashinfer mHC fusion for DSV4 (#33616)](https://github.com/sgl-project/sglang/commit/3ed2a0adf3d87b0f527c173a500dfb40d64b572f)** — Trevor Morris
-  `3ed2a0ad` 2026-08-07T08:01:33Z
-- **[[diffusion] fix: scope the masked-path replicated guard to sp runs (#33953)](https://github.com/sgl-project/sglang/commit/85d611a055a1503fe65fcf6dfccc2a3836e1aff4)** — Mick
-  `85d611a0` 2026-08-07T07:45:50Z
-- **[Fix fractional simulated acceptance in DSpark (#33463)](https://github.com/sgl-project/sglang/commit/5e58af150339ca2f570cdbed523724f19eceafb2)** — weireweire
-  `5e58af15` 2026-08-07T07:45:07Z
-- **[[diffusion] CI: exercise the default sp selection in CI (#33931)](https://github.com/sgl-project/sglang/commit/9aadacfc5325d8f1103c8e16bd34046b47393bf2)** — Mick
-  `9aadacfc` 2026-08-07T06:20:19Z
-- **[[diffusion] fix: minimax-h3 text encoder device mismatch under --text-encoder-cpu-offload (#33864)](https://github.com/sgl-project/sglang/commit/a79340dedd4780a7678c1bce64351f717994a56d)** — triple-mu
-  `a79340de` 2026-08-07T06:04:20Z
-- **[[AMD][DI][CI] 8/N Add GLM-5.2 MXFP4 1P1D DI/CI recipes (base + MTP + DP8/EP8) (#32120)](https://github.com/sgl-project/sglang/commit/fc9479243ef8920f8269fd97803e47e64318c94f)** — Zhaoyi Li
-  `fc947924` 2026-08-07T05:56:40Z
-- **[[srt] Batch scheduler cache frees (#33475)](https://github.com/sgl-project/sglang/commit/4d4f8023c405cade959afb5073e23505b2643a2a)** — Leon Gao
-  `4d4f8023` 2026-08-07T04:49:59Z
-- **[[diffusion] refactor: gate fast vae paths by quality (#33849)](https://github.com/sgl-project/sglang/commit/c2657cc4bfda2c656abe6320a7149331544d0139)** — Mick
-  `c2657cc4` 2026-08-07T04:39:55Z
-- **[[diffusion] fix: fix 4/8-step distilled minimax-h3 turbo lora merge (#33875)](https://github.com/sgl-project/sglang/commit/914644e81c9b6fc31d60a1ab5327a4884514c074)** — WenhaoZhang
-  `914644e8` 2026-08-07T04:38:37Z
-- **[[diffusion] chore: route zimage and hunyuanvideo attention through USPAttention (#33923)](https://github.com/sgl-project/sglang/commit/6dc77e490dd9428d1ec9bbf4ff45bc1abf060ac1)** — Mick
-  `6dc77e49` 2026-08-07T04:36:23Z
-- **[[diffusion] chore: derive h3 attention admission from backend capabilities (#33707)](https://github.com/sgl-project/sglang/commit/698f019a5a4ebc8762339559fcc00191e796fc1c)** — Mick
-  `698f019a` 2026-08-07T04:35:15Z
-- **[[misc] Remove break-graph debug log; reclaim pid-less /dev/shm leaks in CI (#33929)](https://github.com/sgl-project/sglang/commit/afa79330b8d2f63934f721857f4462a1f4cc9a8a)** — Liangsheng Yin
-  `afa79330` 2026-08-07T04:18:01Z
-- **[Clean GLM-5.2 NVFP4 cookbook (#33935)](https://github.com/sgl-project/sglang/commit/0c3a76fa0a5bfab410b645f4143e7e8e3cc25c77)** — Brayden Zhong
-  `0c3a76fa` 2026-08-07T03:51:34Z
-- **[fix(qwen2_5vl): replace in-place += with out-of-place + on expand view in decode path (#22634)](https://github.com/sgl-project/sglang/commit/453ea21dd32eb9cfe572b3fce8856169955a871b)** — Liu Zhenlong
-  `453ea21d` 2026-08-07T03:51:09Z
-- **[[Distributed] Propagate semantic group names to PyTorch process groups (#32900)](https://github.com/sgl-project/sglang/commit/f9e6888b5a3abd5917cb92bd7cc76ce3ee9e1d42)** — CangYue
-  `f9e6888b` 2026-08-07T03:38:12Z
-- **[[Diffusion]Skipping tensor copying for non-BCG GLM-Image workflows (#33688)](https://github.com/sgl-project/sglang/commit/c54dc4582fddc11151567809c53e8cb421c83b7d)** — Elizaveta Martirosian
-  `c54dc458` 2026-08-07T03:19:58Z
-- **[[CI] Refresh the CPU HF cache base only on main-ref runs (#33904)](https://github.com/sgl-project/sglang/commit/163b739b34023c30231062a46caecd62fc4aff83)** — Liangsheng Yin
-  `163b739b` 2026-08-07T02:37:59Z
-- **[fix: preserve priority for batched embedding requests (#32977)](https://github.com/sgl-project/sglang/commit/fe6a05a8e81f29f63e0bb8a721bdac5ac5762b1e)** — Nikhil Kulkarni
-  `fe6a05a8` 2026-08-07T02:26:18Z
-- **[fix(gdn): skip the -1 padding sentinel in the chunked extend kernel (#33810)](https://github.com/sgl-project/sglang/commit/db8f3cdd11eba31258157ce30912a30200361cae)** — Yuwei An
-  `db8f3cdd` 2026-08-07T01:48:47Z
-- **[[diffusion] feat: support K/V-gather style sequence parallel (CP-like) attention (#32667)](https://github.com/sgl-project/sglang/commit/1e08b865f9aec934fa172ef3b8f721ee0e7700b3)** — Mick
-  `1e08b865` 2026-08-07T01:39:28Z
-- **[[diffusion] CI: fix output-rank test fixture (#33878)](https://github.com/sgl-project/sglang/commit/9ee658d4f645f83852cc457059142058cedbac87)** — Mick
-  `9ee658d4` 2026-08-07T01:33:50Z
-- **[[Fix] Reformat /vertex_generate successful predictions (#33446)](https://github.com/sgl-project/sglang/commit/2c3ecf32f1a8be038712a1d663ced6eae722a1c1)** — Dustin Luong
-  `2c3ecf32` 2026-08-07T00:00:48Z
-- **[Fix paged SWA retraction resume accounting (#33794)](https://github.com/sgl-project/sglang/commit/af7c62e3378ee143f53e8536c21679d8aac337e0)** — Hao Zhang
-  `af7c62e3` 2026-08-06T23:32:54Z
-- **[Fix sgl-deep-ep builder dependencies (#33866)](https://github.com/sgl-project/sglang/commit/e0af47b03edf20f0be25faf2dfecf77675a50255)** — Baizhou Zhang
-  `e0af47b0` 2026-08-06T23:30:02Z
-- **[Fix inference mode mismatch in FlashInfer warmup (#33788)](https://github.com/sgl-project/sglang/commit/bae29f716acd3c46f1620131b397b011cfa72c08)** — Po-Han Huang (NVIDIA)
-  `bae29f71` 2026-08-06T23:11:41Z
-- **[[AMD] Enable gfx1250 sgl-kernel builds (#32466)](https://github.com/sgl-project/sglang/commit/b38caebf09e847611f663be237f6028aab1bd8de)** — Oguz Ulgen
-  `b38caebf` 2026-08-06T22:47:17Z
-- **[[AMD] perf: compact Triton extend-attention for ragged prefill (AMD/HIP-only) (#29677)](https://github.com/sgl-project/sglang/commit/18e6c61c21ad39725522c008190d2b540dd6228d)** — valechen
-  `18e6c61c` 2026-08-06T21:46:10Z
-- **[Fix Mistral-Large-3 EAGLE draft skipping DeepseekV2Model.__init__ (#33785)](https://github.com/sgl-project/sglang/commit/dd7e4c91e2e17e96c8d564c1ae321ccf05ea2287)** — Brayden Zhong
-  `dd7e4c91` 2026-08-06T20:59:28Z
-- **[[Kimi-K3] Allow DSPARK verify on cutedsl_mla (fold_sq) (#33650)](https://github.com/sgl-project/sglang/commit/971932d66117af03f5a4833d5fdf1ee42fba2c79)** — Yuhao Yang
-  `971932d6` 2026-08-06T20:54:25Z
-- **[fix(PP): size the mamba pool per pipeline stage, not per whole model (#33666)](https://github.com/sgl-project/sglang/commit/2fc557254b3aaf539e80266e52a6d1e1f8da9980)** — YAMY
-  `2fc55725` 2026-08-06T20:10:43Z
-- **[[Deps] Upgrade CUDA PyTorch stack to 2.13 (#28836)](https://github.com/sgl-project/sglang/commit/434e646282e5c7fcaeb5a2df38bc34dc704a0e58)** — Mohammad Miadh Angkad
-  `434e6462` 2026-08-06T19:08:44Z
-- **[[ModelOpt FP4] Support online MoE weight quantization (#33115)](https://github.com/sgl-project/sglang/commit/4ad990ba7d75bb9f948f5f6bd8d79a66b5d3fd63)** — Ziang Li
-  `4ad990ba` 2026-08-06T18:01:55Z
-- **[[Disagg][StagingBuffer][2/2] Support radix cache (#30545)](https://github.com/sgl-project/sglang/commit/05c7ebf64c1a42590328435e6f7352cfd1bb45a8)** — YAMY
-  `05c7ebf6` 2026-08-06T15:59:35Z
+## 📋 逐条解读
+
+### 1. [Bugfix] Fix get_open_port() livelock on DP-reserved ports and cover get_open_ports_list
+- **做了什么**：修复了在 DP（数据并行）预留端口场景下，获取可用端口时可能陷入死循环的问题，并补充了相关测试。
+- **涉及概念**：`get_open_port()` 是用于在分布式训练/推理中动态获取空闲端口（网络通信入口）的工具函数。**比喻**：就像多人合租时抢唯一空闲的卫生间，如果锁坏了，大家会一直敲门死等。
+- **影响**：使用数据并行（DP）部署 vLLM 的用户，启动时更稳定，不会再卡在端口分配上。
+
+### 2. [Bugfix][KV-transfer] MoRIIO: per-layer READ-completion barrier in wait_for_layer_load
+- **做了什么**：修复了 KV 传输组件 MoRIIO 中，等待每层数据加载完成时的同步屏障（barrier）逻辑，确保每一层都真正读完才继续。
+- **涉及概念**：KV-transfer 用于多机多卡间传输 KV Cache（注意力缓存）。**比喻**：流水线上每个工位（层）必须确认自己手里的零件（数据）拿全了，才能开始组装下一步。
+- **影响**：使用 MoRIIO 做 KV 传输的分布式推理用户，多卡间的数据一致性更强，减少因“没读完就开工”导致的错误。
+
+### 3. [PD][NixlPush][Bugfix] Fix prefix caching
+- **做了什么**：修复了 PD 分离架构下，NixlPush 连接器中前缀缓存（prefix caching）失效的问题。
+- **涉及概念**：PD 分离（Prefill/Decode 分离）是把“预填充”和“生成”阶段放到不同实例上。前缀缓存是复用相同提示词前缀的计算结果。**比喻**：做菜时，如果客人点的前菜一样，就不用每桌都重新炒一遍。
+- **影响**：使用 PD 分离 + NixlPush 的用户，前缀缓存重新生效，相同前缀请求的响应速度会明显提升。
+
+### 4. [Model] Enable Qwen3.8 for AMD Rocm
+- **做了什么**：让 Qwen3.8 模型在 AMD ROCm 平台上可以正常运行。
+- **涉及概念**：ROCm 是 AMD 的 GPU 计算平台，相当于 NVIDIA 的 CUDA。**比喻**：原来只给 NVIDIA 显卡写的游戏，现在也适配了 AMD 显卡。
+- **影响**：AMD GPU 用户现在可以直接跑 Qwen3.8 模型，无需等待额外适配。
+
+### 5. [Bugfix] Skip fetching revision for model when model and weights_model are different
+- **做了什么**：当模型与权重来源模型不同时，跳过获取模型版本（revision）的操作，避免不必要的报错。
+- **涉及概念**：revision 是模型仓库（如 HuggingFace）中某个版本的标识。**比喻**：你点了一份“牛肉面”，但指定用“另一家店的牛肉”，那就没必要去查“牛肉面店”的菜单版本。
+- **影响**：使用自定义模型+外部权重的用户，加载过程更顺畅，减少无意义的报错。
+
+### 6. Fix ROCm architecture import on non-ROCm platforms
+- **做了什么**：修复了在非 ROCm 平台上导入 ROCm 相关架构代码时报错的问题。
+- **涉及概念**：架构（architecture）检测用于确定硬件平台类型。**比喻**：修好了“在 Windows 电脑上误装 Mac 驱动”导致的报错。
+- **影响**：非 AMD 平台（如 NVIDIA/Intel）用户，升级后不会再遇到因 ROCm 导入导致的意外崩溃。
+
+### 7. feat: extended EPLB support for Mistral Large 3 and additional MoE backends
+- **做了什么**：为 Mistral Large 3 模型和更多 MoE（混合专家）后端扩展了 EPLB（Expert Parallel Load Balancing，专家并行负载均衡）支持。
+- **涉及概念**：MoE 模型把任务分给多个“专家”子网络，EPLB 负责让各专家工作量均衡。**比喻**：客服中心有多个专家坐席，调度系统要保证每个专家接的电话数量差不多。
+- **影响**：使用 Mistral Large 3 或其他 MoE 模型的用户，多卡推理时负载更均衡，吞吐量更稳定。
+
+### 8. [XPU] quick fix online quantization UT break
+- **做了什么**：修复了 XPU（Intel GPU）平台上在线量化单元测试失败的问题。
+- **涉及概念**：量化（Quantization）是把模型权重从高精度（如 FP16）压缩到低精度（如 INT8），以节省显存和加速。**比喻**：把高清照片压缩成小尺寸缩略图，省空间但细节略损失。
+- **影响**：Intel GPU 用户使用在线量化功能时，测试和功能不再报错。
+
+### 9. [Misc] Add and enable Triton kernel unit tests on XPU
+- **做了什么**：为 Intel XPU 平台添加并启用了 Triton 内核的单元测试。
+- **涉及概念**：Triton 是一种 GPU 编程语言/编译器，用于编写高性能内核。**比喻**：给新修的发动机（Triton 内核）增加了质检环节（单元测试）。
+- **影响**：对普通用户影响较小，主要是 Intel GPU 平台的质量保障提升。
+
+### 10. [PD][PushConnector] Record last activity of remotes to allow clean up of stale ones
+- **做了什么**：在 PushConnector 中记录远端节点的最后活动时间，从而可以清理长期不活跃的过期节点。
+- **涉及概念**：PushConnector 是 PD 分离架构中负责推送数据的组件。**比喻**：群聊中记录每个成员最后发言时间，把长期潜水的人移出群聊，保持群活跃。
+- **影响**：分布式部署中，失效节点能被自动清理，系统资源利用更合理。
+
+### 11. [Bugfix][Platform] Stop re-initializing NVML on every device-capability check
+- **做了什么**：修复了每次检查设备能力时都重复初始化 NVML（NVIDIA 管理库）的问题，改为只初始化一次。
+- **涉及概念**：NVML 是 NVIDIA 提供的 GPU 状态查询接口。**比喻**：每次问路都重新打开地图 App，现在改为打开一次，之后直接查。
+- **影响**：启动和运行时的额外开销减少，尤其对频繁检查设备能力的场景有明显提速。
+
+### 12. [Bugfix][Quantization] Fix dynamic INT8 W8A8 MoE config being built as W8A16
+- **做了什么**：修复了动态 INT8 W8A8 量化的 MoE 模型配置被错误构建为 W8A16 的问题。
+- **涉及概念**：W8A8 表示权重和激活都用 8 位整数，W8A16 表示权重 8 位、激活 16 位。**比喻**：原本想用“8 位精度”存储，结果系统错误地用了“8 位权重+16 位激活”的方案，导致显存占用和速度不符合预期。
+- **影响**：使用动态 INT8 量化的 MoE 模型用户，显存占用和推理速度会符合预期，不再“名不副实”。
+
+### 13. [Refactor] Remove kernel dead code
+- **做了什么**：删除了内核中不再使用的死代码。
+- **涉及概念**：死代码是永远不会被执行到的代码。**比喻**：清理仓库里堆了十年没用的旧机器，腾出空间。
+- **影响**：代码更干净，编译时间可能略减，对普通用户无直接感知。
+
+### 14. Support DeepSeek-V4 AMD Quark NVFP4 with emulation kernel
+- **做了什么**：支持 DeepSeek-V4 模型在 AMD 平台上使用 Quark NVFP4 量化格式（通过模拟内核实现）。
+- **涉及概念**：NVFP4 是 NVIDIA 的 4 位浮点格式，AMD 通过模拟方式兼容。**比喻**：AMD 显卡上装了个“翻译器”，能读懂 NVIDIA 专属的压缩格式。
+- **影响**：AMD 用户现在可以运行 DeepSeek-V4 并使用 4 位量化，显存占用大幅降低。
+
+### 15. [ROCm][CI] Loosen block-FP8 fused MoE test tolerance for large-K shapes
+- **做了什么**：放宽了 ROCm 平台上 block-FP8 融合 MoE 测试在 K 值较大时的误差容忍度。
+- **涉及概念**：K 是矩阵乘法中的维度大小。FP8 是 8 位浮点格式，精度较低，大 K 时误差更明显。**比喻**：考试题目变难了（大 K），评分标准适当放宽，避免误判。
+- **影响**：AMD 平台上某些大矩阵场景的测试不再误报失败，CI 更
+
+## sglang
+## 🔥 重要更新（如果有的话）
+
+- **CUDA PyTorch 升级到 2.13**（#28836）：这是影响面最大的变更，涉及整个 CUDA 技术栈的升级，可能影响所有使用 NVIDIA GPU 的用户，建议关注官方发布说明。
+- **LTX-2 视频生成性能提升 1.56 倍**（#33885）：通过启用可中断 CUDA 图，将端到端延迟从 10.75 秒降至 6.90 秒，对使用该模型的用户是显著的体验提升。
+
+## 📋 逐条解读
+
+### 1. [Remove the HiMambaRadixTree that is no longer in use]
+- **做了什么**：删除了一段不再使用的代码（HiMambaRadixTree 数据结构）。
+- **涉及概念**：RadixTree（基数树）是一种高效存储和检索前缀的树结构，常用于缓存管理。这里相当于清理仓库里一个废弃的旧工具。
+- **影响**：无直接用户影响，属于代码清理，让项目更整洁。
+
+### 2. [[diffusion] Enable breakable CUDA graph for LTX-2]
+- **做了什么**：为 LTX-2 视频生成模型启用了“可中断 CUDA 图”功能，将端到端时间从 10.75 秒降至 6.90 秒。
+- **涉及概念**：CUDA 图（CUDA Graph）是将一系列 GPU 操作打包成一张图一次性执行，减少调度开销。“可中断”意味着可以在中途打断并继续，增加了灵活性。
+- **影响**：使用 LTX-2 生成视频的用户会感受到明显的速度提升（约 1.56 倍）。
+
+### 3. [[diffusion] feat: make scheduler rpc deadlines explicit]
+- **做了什么**：让调度器的 RPC（远程过程调用）超时时间变得明确可配置。
+- **涉及概念**：RPC 是不同计算节点之间通信的方式；“deadline”指等待响应的最长时间。以前可能是隐式或写死的，现在可以显式设置。
+- **影响**：对分布式部署的用户更友好，可以按需调整超时策略，避免任务卡死。
+
+### 4. [Fix vae fast path test after the gate refactor]
+- **做了什么**：修复了在“门控重构”之后 VAE 快速路径测试失败的问题。
+- **涉及概念**：VAE（变分自编码器）是图像/视频生成中负责压缩和解压潜空间的组件；“门控”指根据条件决定走哪条代码路径的逻辑。
+- **影响**：保证测试通过，确保代码质量，对用户无直接感知。
+
+### 5. [Fix Nemotron W4A16 NVFP4 MoE backend]
+- **做了什么**：修复了 Nemotron 模型在 W4A16 NVFP4 混合精度下的 MoE（混合专家）后端问题。
+- **涉及概念**：W4A16 指权重 4-bit、激活 16-bit 的量化方式；NVFP4 是 NVIDIA 的 4-bit 浮点格式；MoE 是混合专家模型，将任务分给不同“专家”子网络。
+- **影响**：使用 Nemotron 模型且开启低比特量化的用户会得到更正确的推理结果。
+
+### 6. [[diffusion] UX: speed up tp and fsdp checkpoint loading]
+- **做了什么**：加速了张量并行（TP）和 FSDP 检查点（模型存档）的加载速度。
+- **涉及概念**：TP 是将模型切分到多张 GPU 上并行计算；FSDP 是 PyTorch 的一种分布式训练/加载方案；检查点就是模型训练好的“存档文件”。
+- **影响**：分布式加载模型时等待时间更短，用户体验更流畅。
+
+### 7. [[diffusion] fix: bind each rank to accelerator before distributed init]
+- **做了什么**：在分布式初始化之前，先将每个进程（rank）绑定到对应的加速器（GPU）上。
+- **涉及概念**：分布式训练中每个进程需要明确绑定到哪块 GPU；“绑定”可以避免资源冲突和错误分配。
+- **影响**：修复了多卡环境下可能出现的设备分配错误，让分布式运行更稳定。
+
+### 8. [[diffusion] fix: enable bcg with tp]
+- **做了什么**：修复了在张量并行（TP）模式下启用 BCG（一种通信优化技术）的问题。
+- **涉及概念**：BCG 可能指某种通信组（Byte-based Communication Group）优化；TP 模式需要特定的通信模式，之前两者冲突。
+- **影响**：TP 用户现在可以同时享受 BCG 带来的通信效率提升。
+
+### 9. [Fix IndexError in Triton backend with pipeline parallelism]
+- **做了什么**：修复了 Triton 后端在流水线并行（PP）模式下出现的索引越界错误（IndexError）。
+- **涉及概念**：Triton 是一种 GPU 编程语言；流水线并行是将模型的不同层分配到不同设备上，像流水线一样接力计算。
+- **影响**：使用 PP 模式的用户在特定场景下不再遇到崩溃。
+
+### 10. [[diffusion] feat: gate /health and /health_generate on warmup completion and add liveness endpoint]
+- **做了什么**：让 `/health` 和 `/health_generate` 接口在模型预热完成前返回“未就绪”，并新增了一个 `/liveness` 接口用于纯存活检查。
+- **涉及概念**：预热（warmup）是模型启动后先跑一些假数据让 GPU 达到稳定状态；“健康检查”接口用于监控服务状态。
+- **影响**：运维人员可以更准确地区分“服务活着但没准备好”和“服务挂了”，便于自动化调度。
+
+### 11. [[diffusion] model: support lingbot-video moe 30b t2v]
+- **做了什么**：新增了对 lingbot-video moe 30b 文生视频（t2v）模型的支持。
+- **涉及概念**：文生视频（text-to-video）指根据文字描述生成视频；MoE 30b 指该模型有约 300 亿参数且使用混合专家结构。
+- **影响**：用户现在可以直接使用这个新模型进行文生视频任务。
+
+### 12. [[diffusion] feat: make ring admission a backend capability]
+- **做了什么**：将“环形准入”（ring admission）功能改为由后端（backend）声明的能力。
+- **涉及概念**：“环形”可能指环形通信拓扑；“准入”指是否允许某个请求进入；“后端能力”指某个后端能做什么的声明。
+- **影响**：架构更清晰，不同后端可以按需启用该功能，减少不必要的限制。
+
+### 13. [[diffusion] perf: build qwen's masked varlen metadata host-side]
+- **做了什么**：将 Qwen 模型的“掩码变长元数据”改为在 CPU（host）侧构建，而不是 GPU 侧。
+- **涉及概念**：变长（varlen）指输入长度不固定；掩码（masked）指忽略某些位置的注意力；“元数据”是描述数据的数据。在 CPU 构建可以减少 GPU 等待。
+- **影响**：Qwen 模型推理性能有所提升，因为 GPU 不再需要花时间构建这些元数据。
+
+### 14. [Move SWA chunk-cap hatch tests into the registered suite]
+- **做了什么**：将 SWA（滑动窗口注意力）的 chunk-cap 相关测试移入正式注册的测试套件中。
+- **涉及概念**：SWA 是只关注最近窗口的注意力机制；chunk-cap 指对块大小的限制；“测试套件”是一组自动化测试的集合。
+- **影响**：保证该功能被持续测试，减少回归风险。
+
+### 15. [[NPU] [DOC] Upgrade recommendeded sglang version on Ascend NPU]
+- **做了什么**：更新了昇腾 NPU 上推荐的 sglang 版本号。
+- **涉及概念**：NPU 是华为的 AI 芯片；版本推荐是告诉用户哪个版本最稳定。
+- **影响**：使用昇腾 NPU 的用户应参考新推荐的版本进行升级。
+
+### 16. [[diffusion] Z-Image bit-exact fused qk-norm]
+- **做了什么**：为 Z-Image 模型实现了“位精确”的融合 QK-Norm 操作，端到端性能提升 6.4%。
+- **涉及概念**：QK-Norm 是对注意力中的 Query 和 Key 做归一化；“融合”指将多个操作合并成一个；“位精确”指结果与原始实现完全一致。
+- **影响**：Z-Image 用户获得性能提升，且数值结果不变，无精度损失。
+
+### 17. [Fix prefill CP graph overflow with larger bucket search]
+- **做了什么**：通过扩大桶（bucket）搜索范围，修复了预填充（prefill）阶段在上下文并行（CP）下图溢出（overflow）的问题。
+- **涉及概念**：预填充是生成第一个 token 前的处理阶段；CP 是并行处理长上下文的方式；“桶”是缓存分配的粒度。
+- **影响**：长上下文场景下不再因图溢出而报错，稳定性提升。
+
+### 18. [[CI] Share VLM engines and prune launch matrices on the per-commit H100/H200 suites]
+- **做了什么**：在 CI（持续集成）中共享视觉语言模型（VLM）引擎，
 
 ---
 > 🤖 Generated by [daily-llm-tracker](https://github.com/ball-out-of-tune/daily-llm-tracker)
