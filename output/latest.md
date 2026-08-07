@@ -1,314 +1,319 @@
 # 🚀 vLLM & SGLang 每日更新 — 2026-08-07
 
-> 自动生成于 2026-08-07 15:32 UTC | AI 解读: ✅ 含代码解读
+> 自动生成于 2026-08-07 15:39 UTC | AI 解读: ✅ 含代码解读
 
 ## vllm
 ## 💡 今日关键词
 
-- **关键词 1：异构计算加速（AMD ROCm / Intel XPU）**
-  - **一句话通俗解释**：vLLM 不再只支持 NVIDIA GPU，正在大力适配 AMD 和 Intel 的硬件，让更多人在不同显卡上跑大模型。
-  - **为什么社区在关注**：今天的 20 个 commits 中有 5 个直接涉及 AMD/Intel 平台适配。这说明大模型推理正在从"NVIDIA 独占"走向"多平台共存"，各大云厂商和硬件厂商都在争夺推理市场。
-  - **对新手意味着什么**：如果你只有 AMD 或 Intel 电脑，现在也可以尝试跑 vLLM 了。学习时不用非买 NVIDIA 卡，降低了入门门槛。
+- **关键词 1：AMD ROCm 适配加速**
+  - **一句话通俗解释**：让 vLLM 在 AMD 显卡（如 MI355、gfx950）上也能高效运行，而不是只能用在 NVIDIA 显卡上。
+  - **为什么社区在关注**：今天有 5+ 个 commit 涉及 AMD 平台（Qwen3.8 支持、NVFP4 量化、MoE 优化、CI 测试），说明 AMD 在 AI 推理市场正在快速崛起，vLLM 社区正在投入大量资源适配。
+  - **对新手意味着什么**：如果你只有 AMD 显卡，或者想学习异构计算，现在是最好的入场时机。AMD 相关的 bug 和新特性非常多，贡献门槛相对较低。
 
-- **关键词 2：KV Cache 管理与优化**
-  - **一句话通俗解释**：KV Cache 是大模型推理时保存中间计算结果的高速缓存，管理好它就能大幅提升推理速度和吞吐量。
-  - **为什么社区在关注**：今天有 6 个 commits 涉及 KV transfer/offload/prefix caching 相关的 bugfix 和优化。这说明 KV Cache 是当前推理性能优化的核心战场，大家都在解决分布式场景下的缓存一致性和效率问题。
-  - **对新手意味着什么**：理解 KV Cache 是理解 vLLM 性能优化的关键。建议花时间弄懂"什么是 KV Cache""什么是 prefix caching"，这是面试和实战的热点。
+- **关键词 2：KV Cache 传输与卸载**
+  - **一句话通俗解释**：KV Cache 是 LLM 推理时保存中间状态的内存区域，多个 GPU 之间传输、以及卸载到 CPU/磁盘来省显存。
+  - **为什么社区在关注**：今天有 5 个 commit 涉及 KV 传输（MoRIIO、NixlPush、CPU Offload、磁盘 Offload），说明随着模型越来越大、推理集群越来越复杂，KV 管理成为性能瓶颈的核心。
+  - **对新手意味着什么**：KV Cache 是 vLLM 最核心的优化领域之一，理解它等于理解了 vLLM 的"血管系统"。学习成本高但回报极大。
 
-- **关键词 3：量化（Quantization）与低精度推理**
-  - **一句话通俗解释**：把模型权重从 16 位/32 位压缩到 8 位甚至 4 位，用更少的内存跑更大的模型。
-  - **为什么社区在关注**：今天有 4 个 commits 涉及量化（FP8、INT8、NVFP4）的 bugfix 和配置修复。量化是部署大模型的刚需——没有它，很多模型在消费级显卡上根本跑不起来。
-  - **对新手意味着什么**：学会理解量化配置（如 `--quantization fp8`）和不同量化格式的差异，是实际部署模型时绕不开的技能。
+- **关键词 3：量化与精度权衡**
+  - **一句话通俗解释**：把模型权重从 16 位/32 位压缩到 8 位/4 位来省显存加快速度，但会损失一点精度。
+  - **为什么社区在关注**：多个 commit 涉及 FP8、INT8、NVFP4 量化的 bug 修复和测试优化，说明量化是生产环境中的刚需，但精度问题仍然困扰着开发者。
+  - **对新手意味着什么**：量化是 AI 推理的"必修课"，每个框架都在做。学会量化 = 掌握生产环境部署的核心技能。
 
-- **关键词 4：分布式推理与多机多卡**
-  - **一句话通俗解释**：把一个大模型拆到多张 GPU 或多台机器上协同推理，解决单卡显存不够的问题。
-  - **为什么社区在关注**：多个 commits 涉及 NCCL 通信、EPLB（专家并行负载均衡）、MoRIIO 传输等分布式组件。随着模型越做越大，分布式推理从"可选"变成"必选"。
-  - **对新手意味着什么**：分布式概念（TP/PP/EP/DP）是进阶必学。不过建议先把单机跑通，再逐步学习多卡。
+- **关键词 4：前缀缓存（Prefix Caching）**
+  - **一句话通俗解释**：如果多个请求有相同的开头（比如相同的 system prompt），只计算一次，后面直接复用。
+  - **为什么社区在关注**：多个 commit 修复前缀缓存在分布式场景下的 bug（NixlPush、Mamba），说明前缀缓存在多 GPU 环境下容易出错，但收益巨大。
+  - **对新手意味着什么**：前缀缓存是 vLLM 高吞吐的秘密武器，理解它 = 理解为什么 vLLM 比裸 PyTorch 快那么多。
 
 ---
 
 ## 🧪 重要知识点 & 动手实验
 
-### 知识点 1：端口分配中的死锁（Livelock）问题
-
-- **一句话解释**：程序在找可用端口时，如果逻辑有缺陷，可能陷入无限循环——每次都找到一个"看似可用"但实际被保留的端口，永远跳不出去。
-- **为什么重要**：vLLM 在分布式推理时需要为多个进程分配端口。如果端口分配卡死，整个服务就起不来。这个 bug 影响的是 `get_open_port()` 函数——当环境变量 `VLLM_PORT` 恰好落在 DP（数据并行）保留端口区间内时，函数会无限循环。
+### 知识点 1：端口分配中的"活锁"（Livelock）
+- **一句话解释**：程序在循环里反复尝试同一个操作但永远无法成功，CPU 空转但任务一直不完成——就像一个人反复按电梯按钮但电梯永远不来。
+- **为什么重要**：`get_open_port()` 是 vLLM 分布式部署时分配通信端口的关键函数。如果它活锁，整个集群启动会卡死。这个 bug 在 DP（数据并行）预留端口范围内触发，影响多卡部署。
 - **动手试试**：
-  1. 在你本地安装的 vLLM 中找到 `vllm/utils/network_utils.py` 里的 `get_open_port` 函数。
-  2. 设置环境变量 `VLLM_DP_MASTER_PORT=5680` 和 `VLLM_PORT=5682`（5682 在 5680-5690 的保留区间内）。
-  3. 调用 `get_open_port()` 并设置超时（比如 5 秒），观察是否卡住。
-  4. 修复前：函数会一直循环，永远不返回。修复后：函数会跳过保留区间，返回一个区间外的可用端口。
-- **预期结果**：你能亲眼看到"死循环"现象，然后理解修复逻辑——在检查端口可用性时，还要检查该端口是否在保留区间内。
+  1. 设置环境变量 `VLLM_DP_MASTER_PORT=5680` 和 `VLLM_PORT=5682`（5682 在 [5680, 5690) 区间内）
+  2. 调用 `vllm.utils.network_utils.get_open_port()`，观察修复前它会无限循环
+  3. 应用修复后，它应该返回一个不在 5680-5690 范围内的端口
+- **预期结果**：修复前程序卡死（可以用 `timeout 5 python -c "..."` 验证），修复后立刻返回。你掌握了"活锁"和"端口预留"的概念。
 
-### 知识点 2：Prefix Caching（前缀缓存）
-
-- **一句话解释**：当多个请求共享相同的前缀（比如同一个 system prompt 或对话历史）时，只计算一次前缀的 KV Cache，后续请求直接复用，大幅减少重复计算。
-- **为什么重要**：这是 vLLM 提高吞吐量的核心机制之一。今天的 commits 中有两个专门修复 prefix caching 在分布式场景下的 bug，说明这个功能虽然强大但实现复杂。
+### 知识点 2：前缀缓存对齐（Prefix Cache Alignment）
+- **一句话解释**：当多个 GPU 共享 KV Cache 时，缓存命中的位置必须对齐到块边界，否则缓存数据错位导致推理结果错误。
+- **为什么重要**：在分布式推理中，前缀缓存不是简单的"命中就复用"，还要考虑块对齐、物理/逻辑块映射等问题。今天的 NixlPush 和 Mamba 修复都是围绕这个。
 - **动手试试**：
-  1. 启动 vLLM 服务时加上 `--enable-prefix-caching` 参数。
-  2. 发送两个共享相同前缀的请求（比如都以 "The capital of France is" 开头）。
-  3. 观察第二个请求的处理时间——如果 prefix caching 生效，第二个请求会明显更快。
-  4. 再对比不开启 `--enable-prefix-caching` 时两个请求的处理时间差异。
-- **预期结果**：开启后第二个请求的 TTFT（首 token 延迟）显著降低，说明前缀被缓存并复用了。
+  1. 用 `state-spaces/mamba-1.4b-hf` 模型，设置 `mamba_cache_mode="align"` 和 `"all"` 两种模式
+  2. 构造一个 prompt 长度恰好等于块大小整数倍的请求（如 block_size=16，prompt 长度 = 16 或 32）
+  3. 对比两种模式下输出是否一致
+- **预期结果**：修复前 `"all"` 模式在边界处会输出错误结果（因为加载了包含最后一个 token 的缓存状态），修复后两种模式输出一致。你理解了"边界对齐"在缓存系统中的重要性。
 
 ---
 
 ## 🔥 重要更新
 
-1. **修复 `get_open_port()` 端口分配死锁**（Commit 1）：分布式部署时端口分配卡死会导致服务无法启动，这个修复直接关系到 vLLM 的可用性。
-2. **Qwen3.5 模型支持 AMD ROCm**（Commit 4）：让 Qwen3.5 在 AMD 显卡上跑起来，是国产模型 + AMD 硬件组合的重要一步。
-3. **磁盘卸载支持**（Commit 16）：KV Cache 不仅能放 GPU 显存和 CPU 内存，现在还能放到磁盘上，极大扩展了可服务的模型规模。
-4. **修复 NVML 重复初始化性能问题**（Commit 11）：每次检查设备能力都重新初始化 NVML，在每层注意力计算中都会被调用，修复后推理性能有明显提升。
+1. **`[Bugfix] Fix get_open_port() livelock on DP-reserved ports`** — 修复了分布式部署时端口分配可能死循环的问题，影响所有使用 DP 并行的大规模部署。
+2. **`[PD][NixlPush][Bugfix] Fix prefix caching`** — 修复了 Push 模式下前缀缓存的块对齐问题，这是分布式 KV 传输中最难调试的 bug 类型。
+3. **`[Model] Enable Qwen3.8 for AMD Rocm`** — Qwen3.8 正式支持 AMD 平台，AMD 用户终于可以跑最新的 Qwen 模型。
+4. **`[Bugfix][Platform] Stop re-initializing NVML on every device-capability check`** — 性能修复：每次检查 GPU 能力不再重新初始化 NVML，减少推理时的额外开销。
 
 ---
 
 ## 📋 逐条解读
 
 ### 1. [Bugfix] Fix get_open_port() livelock on DP-reserved ports
-- **代码层面**：修改了 `vllm/utils/network_utils.py` 中的 `get_open_port()` 函数，使其在分配端口时跳过 DP 保留区间（`VLLM_DP_MASTER_PORT` 到 +10 的范围）。同时增加了带超时的测试，防止测试本身卡死。
-- **新手概念课堂**：想象你在停车场找车位。普通找法是一个个看有没有空位。但如果某个区域被标记为"预留"，你每次看到一个空位走进去才发现不能用，然后出来重新找——如果整个停车场都是预留位，你就会永远转圈。修复就是：提前知道哪些区域是预留的，直接跳过。
-- **对你有什么影响**：如果你使用多卡分布式部署（如 `--tensor-parallel-size 8`），不会再遇到服务启动时卡死的问题。
+- **代码层面**：修改了 `vllm/utils/network_utils.py` 中的 `get_open_port()` 函数。修复前，当 `VLLM_PORT` 恰好落在 DP 预留的端口范围内时，函数会无限循环尝试获取同一批被预留的端口。修复后，函数会跳过预留范围。
+- **新手概念课堂**：想象你要找一个空房间（端口），但有一排房间（DP 端口范围）被标记为"已预留"。修复前的代码只会在这排预留房间中反复敲门（循环），永远找不到空房。修复后的代码会跳过这排房间，去别处找。
+- **对你有什么影响**：如果你用多卡 DP 并行部署，之前可能遇到启动卡死的问题。修复后启动会顺畅很多。
 
 ### 2. [Bugfix][KV-transfer] MoRIIO: per-layer READ-completion barrier
-- **代码层面**：修改了 `moriio_connector.py`，为 MoRIIO 的 KV 读取增加了逐层完成屏障，并修复了 CUDA Graph 模式下屏障无法触发的问题（增加警告而非静默降级）。
-- **新手概念课堂**：想象一条流水线，每个工位完成自己的任务后要通知下一个工位可以开始了。如果某个工位没通知，下一个工位就可能拿到半成品。这里的"屏障"就是确保每一层都真正读完了 KV 再继续。
-- **对你有什么影响**：使用 MoRIIO 做 KV 传输的高并发场景下，推理结果的准确性有保障，不会因为读取未完成而算错。
+- **代码层面**：修改了 `moriio_connector.py`，在 READ 模式下增加了一个"每层读取完成屏障"（per-layer barrier），确保每一层的 KV 数据都读取完成后再继续。同时增加了 CUDA Graph 模式兼容性警告。
+- **新手概念课堂**：想象你在搬家具（KV 数据），每搬完一层楼（layer）需要确认所有箱子都到了才能继续搬下一层。之前的代码是"搬完所有层再确认"，容易出错。现在改成"每层都确认"。
+- **对你有什么影响**：使用 MoRIIO 做 KV 传输的用户在高并发下精度更稳定，不会出现数据未就绪就继续计算的问题。
 
 ### 3. [PD][NixlPush][Bugfix] Fix prefix caching
-- **代码层面**：修复了 NixlPush 模式下 prefix caching 的裁剪逻辑——当部分前缀命中时，只传输"未计算"的尾部块，而不是错误地传输整个序列。同时增加了针对 Mamba 混合模型的测试。
-- **新手概念课堂**：你在图书馆借书，发现前 10 页有人已经抄好了（缓存命中），你只需要抄第 11 页开始的内容。但之前的 bug 是：它把前 10 页的内容又抄了一遍，还抄到了错误的位置。
-- **对你有什么影响**：使用 PD（Prefill-Decode）分离架构时，prefix caching 能正确工作，不会浪费带宽或产生错误结果。
+- **代码层面**：修改了 `_apply_prefix_caching` 函数签名，增加了 `local_physical_per_logical` 参数，修复了 Push 模式下前缀缓存只保留"未计算块"而不是"全部块"的问题。
+- **新手概念课堂**：前缀缓存就像抄作业——如果两个同学的前半部分作业一样，第二个同学只需要写后半部分。但这个 bug 让第二个同学把前半部分也重写了（或者写错位置）。修复后，Push 模式下只传输需要计算的后半部分。
+- **对你有什么影响**：使用 NixlPush 做 PD 分离部署的用户，前缀缓存命中率提升，推理速度更快，显存占用更少。
 
 ### 4. [Model] Enable Qwen3.8 for AMD Rocm
-- **代码层面**：在 `Qwen3_5ForCausalLMBase` 中增加了 `SupportsMRoPE` 支持，并实现了 `get_mrope_input_positions` 方法，使 Qwen3.5 模型能在 AMD ROCm 平台上运行。
-- **新手概念课堂**：MRoPE 是一种位置编码方式，不同硬件平台可能需要不同的实现方式。这就像同一本书，在不同出版社有不同的排版，但内容是一样的。
-- **对你有什么影响**：AMD 显卡用户现在可以运行 Qwen3.5 模型了。
+- **代码层面**：在 `qwen3_5.py` 中为 Qwen3.8 模型添加了 `SupportsMRoPE` 支持，并实现了 `get_mrope_input_positions` 方法（多模态旋转位置编码的输入位置计算）。
+- **新手概念课堂**：MRoPE（Multimodal Rotary Position Embedding）是 Qwen3.8 用来同时处理文本、图片、视频位置信息的技术。AMD 平台上之前不支持这个特性，现在补上了。
+- **对你有什么影响**：AMD 显卡用户现在可以跑 Qwen3.8 多模态模型了。
 
 ### 5. [Bugfix] Skip fetching revision for model when model and weights_model are different
-- **代码层面**：修改了 `vllm/config/model.py` 中的 `__post_init__` 逻辑——当 `model_weights` 与 `model` 不同（比如模型来自 A 仓库、权重来自 B 仓库的 GGUF 文件）时，不再尝试从 HuggingFace 解析 revision，避免不必要的网络请求和潜在错误。
-- **新手概念课堂**：revision 是 HuggingFace 上模型的版本号。如果你用 A 模型的配置 + B 模型的权重，那么 B 的 revision 才是你真正需要的。之前的代码会去 A 找 revision，找错了地方。
-- **对你有什么影响**：使用 GGUF 等外部权重文件时，启动速度更快，不会因为多余的网络请求而报错。
+- **代码层面**：修改了 `vllm/config/model.py`，当 `model_weights` 指向的仓库与 `model` 不同时，不再尝试解析 model 的 revision（版本号）。因为 weights 来自不同仓库，model 的 revision 没有意义。
+- **新手概念课堂**：`model` 是模型架构的仓库，`model_weights` 是权重的仓库。比如架构来自 `Qwen/Qwen3-0.6B`，但权重来自 `unsloth/Qwen3-0.6B-GGUF`。之前代码会去查 `Qwen/Qwen3-0.6B` 的最新版本号，但权重根本不在那里，查了也白查。
+- **对你有什么影响**：使用 GGUF 或其他第三方权重格式的用户，启动速度会更快（少了一次网络请求）。
 
 ### 6. Fix ROCm architecture import on non-ROCm platforms
-- **代码层面**：在 `mxfp4.py` 和 `oracle/mxfp4.py` 中，将 `from vllm.platforms.rocm import on_gfx1250` 改为先检查 `current_platform.is_rocm()` 再导入。避免在非 ROCm 平台上导入 ROCm 专属模块导致报错。
-- **新手概念课堂**：就像你在 Windows 电脑上安装了 Mac 专属的驱动程序，虽然不会用，但安装过程可能报错。修复就是：先检查是不是 Mac，不是就不装。
-- **对你有什么影响**：非 AMD 用户不会再因为导入 ROCm 模块而遇到 ImportError。
+- **代码层面**：修改了 `mxfp4.py` 和 `oracle/mxfp4.py`，将 `from vllm.platforms.rocm import on_gfx1250` 改为条件导入——只有当前平台是 ROCm 时才导入。
+- **新手概念课堂**：`on_gfx1250()` 是检查 GPU 是否是 AMD 的 gfx1250 架构。之前不管什么平台都尝试导入这个函数，在非 AMD 平台上会报错。现在改成"是 AMD 才检查"。
+- **对你有什么影响**：NVIDIA 用户不会再遇到奇怪的导入错误，MXFP4 量化在非 AMD 平台更稳定。
 
 ### 7. feat: extended EPLB support for Mistral Large 3 and additional MoE backends
-- **代码层面**：增加了新的测试文件 `test_eplb_quant_scale_consistency.py`，验证 EPLB（专家并行负载均衡）在重排专家权重后，量化相关的 scale 和 alpha 参数能正确同步。扩展了 EPLB 对 Mistral Large 3 和更多 MoE 后端的支持。
-- **新手概念课堂**：EPLB 就像餐厅里动态调整服务员负责的桌子数量，让每个服务员工作量均衡。但如果调整桌子后，每张桌子对应的"小费记录"（量化参数）没跟着搬，就会出错。
-- **对你有什么影响**：使用 Mistral Large 3 或特定 MoE 后端时，推理结果更稳定。
+- **代码层面**：新增了 `test_eplb_quant_scale_consistency.py` 测试文件，验证 EPLB（Expert Parallel Load Balancing，专家并行负载均衡）重排后量化参数的一致性。
+- **新手概念课堂**：EPLB 是 MoE（混合专家）模型中的负载均衡技术——把计算量大的专家（expert）分配到更多 GPU 上。重排（rearrange）后，每个专家对应的量化缩放因子也要跟着移动，否则数值就乱了。
+- **对你有什么影响**：使用 Mistral Large 3 或其他 MoE 模型的用户，EPLB 和量化可以同时使用，不会出现精度问题。
 
 ### 8. [XPU] quick fix online quantization UT break
-- **代码层面**：在 `test_online.py` 中将硬编码的 `device="cuda"` 改为 `DEVICE = current_platform.device_type`，并在 NVFP4 的跳过条件中增加了 XPU 判断。
-- **新手概念课堂**：测试代码里写死了"只能在 CUDA 上跑"，但 Intel XPU 也可以跑部分测试。修复就是让测试自动识别当前平台。
-- **对你有什么影响**：Intel 显卡用户可以运行更多量化相关的测试。
+- **代码层面**：修改了 `tests/quantization/test_online.py`，将硬编码的 `device="cuda"` 改为 `device=DEVICE`（根据平台动态选择），并修复了 NVFP4 在 XPU 上的跳过条件。
+- **新手概念课堂**：测试代码之前写死了"只能在 CUDA 上跑"，现在改成"根据平台自动选择设备"。就像把"只在北京开的分店"改成"全国各地都有分店"。
+- **对你有什么影响**：Intel XPU 用户可以跑在线量化测试了。
 
 ### 9. [Misc] Add and enable Triton kernel unit tests on XPU
-- **代码层面**：在多个测试文件中将 `device = torch.device("cuda:0")` 改为根据平台动态选择设备，并调整了跳过条件以支持 XPU。
-- **新手概念课堂**：测试代码从"只认 NVIDIA"变成"认识所有平台"，让 Intel 用户也能验证 Triton kernel 的正确性。
-- **对你有什么影响**：Intel 用户可以更放心地使用 vLLM 的 Triton kernel。
+- **代码层面**：修改了多个内核测试文件（`test_fused_rms_norm_gated.py`、`test_block_int8.py`、`test_int8_kernel.py`），将设备从 `cuda:0` 改为动态选择，并添加了 XPU 的跳过/启用逻辑。
+- **新手概念课堂**：Triton 是一个 GPU 编程语言，可以同时编译到 CUDA 和 XPU。之前测试只验证 CUDA 路径，现在 XPU 路径也被覆盖了。
+- **对你有什么影响**：Intel XPU 用户对 Triton 内核的稳定性更有信心。
 
 ### 10. [PD][PushConnector] Record last activity of remotes to allow clean up of stale ones
-- **代码层面**：在 `base_worker.py` 中增加了 `_engine_last_active` 记录机制，每次推送 KV 时刷新对应远端引擎的活动时间，并在握手时清理超过 TTL 的过期引擎。
-- **新手概念课堂**：就像社交软件上"最近活跃时间"——如果某个好友超过 30 天没上线，系统就把他从好友列表移除。这里同理，如果某个远端引擎超过 TTL 没活动，就清理掉它的连接资源。
-- **对你有什么影响**：分布式部署中，当某个节点缩容或重启后，不会残留僵尸连接占用资源。
+- **代码层面**：在 `base_worker.py` 中增加了 `_engine_last_active` 字典记录每个远端引擎的最后活跃时间，并在 `_ensure_handshake` 中增加清理逻辑，删除超过 TTL 的过期引擎。
+- **新手概念课堂**：想象一个会议室（远端引擎），如果没人用超过 30 分钟，就自动释放。之前没有这个机制，导致 D 引擎扩容/缩容后，旧引擎的连接残留，浪费资源。
+- **对你有什么影响**：PD 分离部署中，D 引擎动态扩缩容时不会残留僵尸连接，资源利用更高效。
 
 ### 11. [Bugfix][Platform] Stop re-initializing NVML on every device-capability check
-- **代码层面**：移除了 `has_device_capability` 中的 `with_nvml_context` 包装，因为 `get_device_capability` 内部已经维护了 NVML 上下文。避免了每次调用都执行 `nvmlInit()`/`nvmlShutdown()` 对。
-- **新手概念课堂**：想象你每次要查一个电话号码，都重新打开电话簿、查完再合上。修复就是：电话簿一直打开着，直接查就行。这个函数在每层注意力计算中都会被调用，所以性能提升显著。
-- **对你有什么影响**：推理速度有可感知的提升，尤其是在层数多的模型中。
+- **代码层面**：修复了 `has_device_capability` 方法——之前每次调用都重新初始化 NVML（NVIDIA 管理库），导致大量不必要的开销。修复后只初始化一次，后续直接读缓存。
+- **新手概念课堂**：NVML 是 NVIDIA 的"体检中心"，每次检查 GPU 能力都要"挂号"（初始化）和"缴费"（关闭）。之前每个 attention 层每步都挂号一次，效率极低。现在只挂号一次，后面直接看报告。
+- **对你有什么影响**：推理性能提升，特别是 FP8/BF16 KV Cache 下，之前每个 step 都有大量 NVML 开销。
 
 ### 12. [Bugfix][Quantization] Fix dynamic INT8 W8A8 MoE config being built as W8A16
-- **代码层面**：修改了 `oracle/int8.py` 中的 `make_int8_moe_quant_config`——当 `per_act_token_quant=True` 且没有提供 activation scale 时，不再错误地构建成 W8A16 配置，而是正确构建 W8A8 动态量化配置。同时将 assert 改为更友好的 ValueError。
-- **新手概念课堂**：W8A8 和 W8A16 的区别是：权重都是 8 位，但激活值（中间计算结果）一个是 8 位、一个是 16 位。之前的 bug 是：明明想要 W8A8 动态量化，却配成了 W8A16。
-- **对你有什么影响**：使用动态 INT8 量化的 MoE 模型时，推理速度和显存占用符合预期。
+- **代码层面**：修改了 `oracle/int8.py` 中的 `make_int8_moe_quant_config`，修复了动态 INT8 量化下，当 `per_act_token_quant=True` 且没有 scale 时，错误地构建为 W8A16 配置的问题。
+- **新手概念课堂**：W8A8 表示权重 8 位、激活 8 位；W8A16 表示权重 8 位、激活 16 位。动态量化下，激活的 scale 是运行时计算的，所以没有预定义的 scale。之前的代码没识别这种情况，错误地走了 W8A16 路径。
+- **对你有什么影响**：使用动态 INT8 量化的 MoE 模型，显存占用和速度都更优。
 
 ### 13. [Refactor] Remove kernel dead code
-- **代码层面**：删除了 `cpu_attn_fp8.hpp` 中未使用的 `fp8e5m2_to_float_scalar` 函数，以及 `libtorch_stable/cache_kernels.cu` 中未使用的 `copy_blocks_kernel` 等 CUDA kernel。
-- **新手概念课堂**：代码清理就像整理房间——把不用的东西扔掉，房间更整洁，找东西也更快。虽然不影响功能，但让代码库更易维护。
-- **对你有什么影响**：无直接用户感知，但代码库更健康。
+- **代码层面**：删除了 `cpu_attn_fp8.hpp` 中的 `fp8e5m2_to_float_scalar` 函数和 `cache_kernels.cu` 中的 `copy_blocks_kernel` 等未使用的内核代码。
+- **新手概念课堂**："死代码"是写了但没人调用的代码。删除它们让代码库更干净，编译更快，也减少维护负担。
+- **对你有什么影响**：编译时间略微缩短，代码库更易维护。
 
 ### 14. Support DeepSeek-V4 AMD Quark NVFP4 with emulation kernel
-- **代码层面**：新增了 DeepSeek-V4 在 AMD 上的 NVFP4 量化支持，包括新增测试配置文件（`DeepSeek-V4-Flash-NVFP4.yaml` 等）和 CI 流水线步骤。
-- **新手概念课堂**：NVFP4 是一种 4 位浮点量化格式。AMD 用"模拟 kernel"（emulation kernel）来跑原本为 NVIDIA 设计的量化格式——就像用翻译软件读外文书。
-- **对你有什么影响**：AMD 用户可以在 MI355 等显卡上运行 DeepSeek-V4 模型。
+- **代码层面**：新增了 DeepSeek-V4 在 AMD 平台的 NVFP4 量化支持，包括新的测试配置（`DeepSeek-V4-Flash-NVFP4.yaml`）和 CI 测试任务。
+- **新手概念课堂**：NVFP4 是 NVIDIA 的 4 位浮点格式，AMD 通过"模拟内核"（emulation kernel）来兼容它。就像用软件模拟器在 AMD 上跑只支持 NVIDIA 的游戏。
+- **对你有什么影响**：AMD 用户终于可以跑 DeepSeek-V4 的量化版本了。
 
 ### 15. [ROCm][CI] Loosen block-FP8 fused MoE test tolerance for large-K shapes
-- **代码层面**：在 `test_block_fp8.py` 中，将参考实现改为使用生产级的 `per_token_group_quant_fp8` 函数，并增加了 `silu_fp32` 选项来匹配不同 kernel 的精度行为，同时放宽了大规模 K 形状下的误差容忍度。
-- **新手概念课堂**：测试就像考试，之前的"标准答案"（参考实现）不够精确，导致 AMD 显卡上算出的结果和标准答案差距略大、被判"不合格"。修复就是让标准答案更接近真实 kernel 的行为。
-- **对你有什么影响**：AMD 显卡上运行 FP8 量化的 MoE 模型，CI 测试更稳定。
+- **代码层面**：修改了 `test_block_fp8.py`，增加了 `silu_fp32` 参数区分两种不同精度的参考实现，并放宽了大 K 形状的测试容差。
+- **新手概念课堂**：FP8 精度有限，大矩阵乘法时误差会累积。测试之前用统一的容差，导致大 K 时失败。现在区分了两种计算路径（一种在 fp32 下计算 SiLU+量化，一种在 bf16 下），各自匹配容差。
+- **对你有什么影响**：AMD ROCm 平台的 CI 测试更稳定，不会因为精度问题误报失败。
 
 ### 16. [Feat][Core] Add disk offloading support to SimpleCPUOffloadConnector
-- **代码层面**：在 `simple_cpu_offload_connector.py` 中新增 `kv_offload_backend` 配置，支持 `"cpu"` 和 `"disk"` 两种后端。磁盘后端支持配置 `disk_path`、`disk_capacity_bytes`、`disk_buffer_slots` 等参数。
-- **新手概念课堂**：之前 KV Cache 只能放 GPU 显存或 CPU 内存。现在可以放到磁盘上——就像把不常用的书从书桌（显存）移到书架（内存）再移到储藏室（磁盘）。容量更大但速度更慢。
-- **对你有什么影响**：超长上下文或超大模型可以在显存不足时，把部分 KV Cache 卸载到磁盘，扩展可服务的最大序列长度。
+- **代码层面**：修改了 `simple_cpu_offload_connector.py`，新增 `kv_offload_backend` 配置，支持 `"cpu"` 和 `"disk"` 两种后端。Disk 模式将 KV Cache 卸载到磁盘（通过 `disk_path` 指定路径），并支持 `use_page_cache` 选项。
+- **新手概念课堂**：之前 KV Cache 只能卸载到 CPU 内存（RAM）。现在可以卸载到磁盘（SSD），虽然慢但容量更大。就像把不常用的东西从书桌（RAM）搬到仓库（磁盘），书桌腾出空间放常用的。
+- **对你有什么影响**：显存极小的用户可以把 KV Cache 卸载到 SSD，虽然速度慢但至少能跑起来。
 
-### 17. [rl] Stateful Trainer Send: NCCL + Sparse NCCL [3/N]
-- **代码层面**：重构了 RL 训练器向推理引擎发送权重的 API。将原来的 `NCCLWeightTransferEngine.trainer_init` + `trainer_send_weights` 模式改为新的 `WeightTransferTrainerFactory.trainer_init` + `ModuleSource` 模式，简化了调用方式。
-- **新手概念课堂**：RLHF 训练中，训练器需要不断更新模型权重并同步给推理引擎。旧 API 需要手动处理很多细节，新 API 封装得更好，用起来更简单。
-- **对你有什么影响**：如果你在做 RLHF，新的 API 更简洁易用。
+### 17. [rl] Stateful Trainer Send: NCCL + Sparse NCCL
+- **代码层面**：重构了 RL（强化学习）训练器的权重传输 API，新增 `WeightTransferTrainerFactory`、`RayVLLMWeightSyncClient` 等抽象，支持 NCCL 和稀疏 NCCL 两种传输后端。
+- **新手概念课堂**：RL 训练中，训练器（trainer）需要频繁把更新的权重发送给推理引擎（vLLM）。之前的代码是"手动档"（直接操作 NCCL 组），现在改成"自动档"（工厂模式 + 客户端抽象）。
+- **对你有什么影响**：RL 训练和推理的权重同步更稳定，API 更简洁。
 
 ### 18. [ROCm][Perf] Kimi-K3 Shard Latent MoE up-projection for ROCm path
-- **代码层面**：新增了 `tests/models/kimi_k3/` 测试目录，为 ROCm 平台的 Kimi-K3 模型的 latent MoE up-projection 增加了分片逻辑的单元测试。
-- **新手概念课堂**：Kimi-K3 是 MoE 模型，up-projection 是其中一步。在 ROCm 上，为了性能需要把这一步分片到多卡上算，但分片逻辑容易出错。测试就是验证分片后结果和不分片一致。
-- **对你有什么影响**：AMD 多卡用户运行 Kimi-K3 时，性能和正确性有保障。
+- **代码层面**：新增 `ROCmLatentMoERunner` 和 `KimiRoutedOutputTransform`，在 AMD 平台实现 Kimi-K3 的分片潜在 MoE 上投影（up-projection）优化。
+- **新手概念课堂**：MoE 模型的"上投影"是把专家输出的低维向量映射回高维。AMD 平台上之前是复制（replicate）每个专家的上投影，现在改成"分片"（shard）——每个 GPU 只算一部分，然后合并。
+- **对你有什么影响**：AMD 用户跑 Kimi-K3 时显存占用降低，速度提升。
 
 ### 19. [Bugfix] Fix Mamba all-mode CPU offload boundary alignment
-- **代码层面**：在 `offloading/scheduler.py` 中，将 `resolve_mamba_align_size` 的检查条件从仅 `"align"` 模式扩展到 `"align"` 和 `"all"` 两种模式，并增加了 `mamba_cache_mode="all"` 的测试。
-- **新手概念课堂**：Mamba 模型的 KV Cache 和 Transformer 不一样——它只有一个"状态"，而不是每个 token 都有 KV。在 CPU offload 时，如果边界对齐不对，可能把包含当前 token 的状态也加载进来，导致重复计算。
-- **对你有什么影响**：使用 Mamba 模型 + CPU offload 时，推理结果更准确。
+- **代码层面**：修改了 `offloading/scheduler.py` 中的 `resolve_mamba_align_size`，将 Mamba 的边界对齐从仅 `"align"` 模式扩展到 `"align"` 和 `"all"` 两种模式。
+- **新手概念课堂**：Mamba 是状态空间模型，它的"缓存"是一个点状态（point state），不像 Transformer 那样有完整的 token 序列。当 prompt 长度恰好等于块边界时，缓存中已经包含了最后一个 token 的状态，不能再加载它（否则重复计算）。
+- **对你有什么影响**：使用 Mamba 模型 + CPU offload 的用户，在边界位置不会出现精度问题。
 
 ### 20. [Bugfix][EPD][Model Runner V2] Skip gather mm embeddings for encoder only instance
-- **代码层面**：修改了 `test_encoder_runner.py`，新增测试验证 encoder-only 实例（EPD 架构中的编码器节点）只执行 `execute_mm_encoder` 而不执行 `get_mm_embeddings` 中的 gather 步骤——因为 encoder 实例不运行语言模型，gather 出来的 embedding 没有人消费，反而会因 cache miss 导致崩溃。
-- **新手概念课堂**：EPD（Encoder-Prefill-Decode）架构中，编码器节点只负责把图片/视频转成 embedding，不负责生成文本。之前的代码会让编码器节点也执行"收集 embedding"的步骤，但这个节点根本没有语言模型来用这些 embedding，反而报错。
-- **对你有什么影响**：使用 EPD 架构处理多模态输入时，编码器节点不再崩溃。
+- **代码层面**：修改了 `encoder_runner.py` 和调度器逻辑，当 EPD（Encoder-Prefill-Decode）架构中 encoder 实例已经通过 connector 获取到多模态嵌入时，跳过 gather 步骤（不再重新编码）。
+- **新手概念课堂**：EPD 架构中，encoder 实例专门处理视觉/音频输入，生成嵌入向量。之前即使 connector 里已经有缓存，encoder 还是会重新编码一遍（浪费算力），而且可能因为找不到本地缓存而崩溃。
+- **对你有什么影响**：EPD 部署中，多模态请求的重复图像/视频不会重复编码，速度更快，也不会崩溃。
 
 ## sglang
 ## 💡 今日关键词
 
-- **CUDA Graph 与可中断图（Breakable CUDA Graph）**：把模型计算预编译成一张"快照图"，执行时跳过 Python 解释器直接跑 GPU，大幅降低调度开销。今日多个 commit 在解决它与流水线并行、张量并行的兼容性问题。
-- **流水线并行（Pipeline Parallelism, PP）**：把大模型按层切分到多张 GPU 上，每张卡只负责一部分层。今日的修复表明 PP 已进入实用阶段，但边界条件（如 KV cache 索引）仍在持续打磨。
-- **扩散模型（Diffusion）推理优化**：SGLang 正在将文生图/文生视频的推理性能推向极致，包括 CUDA Graph、注意力后端抽象、checkpoint 加载加速等。这是目前社区最活跃的领域之一。
-- **量化推理（W4A16 NVFP4）**：用 4-bit 权重 + 16-bit 激活来压缩模型内存占用。今日修复了 MoE（混合专家）模型在该量化方案下的后端选择问题。
-- **健康检查与部署运维**：将"进程存活"和"服务就绪"两个概念分离，提供不同的探针端点，这是大规模部署的标配能力。
+- **CUDA Graph 与性能优化**：通过将 GPU 操作预编译为静态图，大幅减少内核启动开销。社区在持续优化 SGLang Diffusion 的生成性能，如 LTX-2 模型通过可中断 CUDA Graph 实现了 1.56 倍加速，Z-Image 的融合 QK-Norm 也带来了 6.4% 的端到端提升。这说明在 LLM 推理之外，多模态生成（尤其是视频生成）的性能优化已成为重要战场。对新手而言，理解 CUDA Graph 是深入 GPU 高性能计算的关键一步，也是未来优化工作的常见切入点。
 
----
+- **Pipeline Parallelism (PP) 与分布式推理**：将模型切分到多个 GPU 上，每个 GPU 负责一部分层。多个 commit 都在修复 PP 场景下的 bug（如第 9 个 commit 修复了 PP 下 Triton attention 的 IndexError），说明 PP 作为大规模模型推理的核心技术，其工程成熟度仍在提升。对新手来说，理解 PP 是学习大规模分布式推理的必经之路。
+
+- **Diffusion 模型工程化**：SGLang 正在将扩散模型（图像/视频生成）从研究原型推向生产级服务。今天有大量 commit 涉及 Diffusion 的模型支持（LingBot-Video MoE）、健康检查、RPC 超时、Checkpoint 加载优化等。这说明多模态生成模型的部署和工程化正在成为热点，对新手意味着学习 Diffusion 模型的服务化部署是一个新兴且有前景的方向。
+
+- **量化与 MoE 优化**：低精度量化（如 NVFP4）和混合专家模型（MoE）是提升推理效率的关键。第 5 个 commit 修复了 Nemotron W4A16 NVFP4 MoE 后端的 bug，第 11 个 commit 为 LingBot-Video MoE 模型提供了支持。社区正在为更多模型和硬件平台适配这些技术，说明高效推理是持续的核心诉求。
+
+- **健康检查与运维**：第 10 个 commit 引入了 `/liveness` 和 `/health` 分离的端点，第 3 个 commit 增加了 RPC 超时控制。这表明 SGLang 正在向生产级部署迈进，关注服务可用性和可运维性。对新手而言，学习这些运维实践有助于理解生产环境中的服务部署要求。
 
 ## 🧪 重要知识点 & 动手实验
 
-### 知识点 1：流水线并行中的"层偏移"陷阱
+### 知识点 1：CUDA Graph 捕获与重放
 
-- **一句话解释**：当模型被切分到多张 GPU 上时，第 0 层可能不在当前 GPU 上，所以不能假设 `layer 0` 一定存在。
-- **为什么重要**：今日 commit #9 修复的正是这个问题——在 PP 模式下，KV cache 的 `v_head_dim` 查询用了 `layer 0` 导致 IndexError。这类 bug 在 PP 推广后会越来越常见。
+- **一句话解释**：CUDA Graph 将一系列 GPU 内核启动预先录制为一张图，然后在推理时一次性重放，从而消除内核启动的开销。
+
+- **为什么重要**：在深度学习推理中，GPU 内核启动的开销（通常几微秒）在大量小操作时会被放大。CUDA Graph 通过将数百个内核启动合并为一次图启动，可以显著降低延迟，尤其适合 Diffusion 这类需要多步迭代的模型。
+
 - **动手试试**：
-  1. 用 `torch.distributed` 初始化一个 2 卡环境，将模型按层切分（例如 `model.layers[0:12]` 放 rank 0，`model.layers[12:24]` 放 rank 1）。
-  2. 在 rank 1 上尝试访问 `model.layers[0]`，观察报错。
-  3. 改用 `model.layers[model.start_layer]` 或记录每张卡的起始层索引，验证能正确访问。
-- **预期结果**：你会看到 `IndexError: list index out of range` 或类似错误，然后通过正确的层索引解决问题。这说明你理解了 PP 中"每张卡只拥有部分层"的核心约束。
+  1. 安装 PyTorch 和 CUDA 环境，创建一个简单的模型（如一个包含多个线性层的 MLP）。
+  2. 使用 `torch.cuda.graph` 上下文管理器捕获模型的推理过程。
+  3. 对比普通推理和 CUDA Graph 推理的耗时（使用 `torch.cuda.Event` 计时）。
+  4. 尝试修改输入张量的形状或值，观察 CUDA Graph 重放时是否出错。
 
-### 知识点 2：CUDA Graph 捕获时的"非法操作"
+- **预期结果**：你会看到 CUDA Graph 推理的耗时显著低于普通推理（尤其是当模型包含大量小操作时）。如果修改了输入形状，你可能会遇到错误，这说明了 CUDA Graph 对输入形状的静态要求。
 
-- **一句话解释**：CUDA Graph 捕获期间，所有操作必须是可图化的（graph-safe），例如不能在捕获中做 CPU 到 GPU 的同步拷贝。
-- **为什么重要**：今日 commit #2 专门处理了 LTX-2 模型中在 CUDA Graph 捕获区域内构建 RoPE 坐标的问题——那段代码用了 `torch.tensor(list, device=cuda)`（未固定内存的 H2D 拷贝），这在图捕获中是违法的。
+### 知识点 2：Pipeline Parallelism (PP)
+
+- **一句话解释**：将一个大模型按层切分成多个阶段，每个 GPU 负责一个阶段，数据像流水线一样依次经过各个阶段。
+
+- **为什么重要**：当模型过大无法放入单张 GPU 时，PP 是常用的分布式训练/推理策略。它允许更大的模型规模，但引入了跨 GPU 的通信开销和负载均衡问题。
+
 - **动手试试**：
-  1. 写一个简单的 PyTorch 模型，在 `forward` 中做 `torch.tensor([1,2,3], device='cuda')`。
-  2. 用 `torch.cuda.graph()` 上下文捕获该模型的前向传播。
-  3. 观察捕获是否报错，然后改为在捕获前预分配张量，再在捕获中只做 `copy_` 操作。
-- **预期结果**：第一次捕获会报错（`Capture was not successful` 或类似信息），修改后捕获成功。这说明你理解了 CUDA Graph 对操作类型的严格限制。
+  1. 使用 PyTorch 的 `torch.distributed.pipeline.sync.Pipe` 模块，将一个包含 4 个线性层的模型切分为 2 个阶段，分布在 2 个 GPU 上（如果没有多 GPU，可以用 CPU 模拟）。
+  2. 输入一批数据，观察模型输出是否正确。
+  3. 尝试将模型的 `start_layer` 设置为非 0 的值（模拟 PP 中某个阶段只负责部分层），复现第 9 个 commit 中修复的 IndexError 问题。
+  4. 修改代码，使用 `start_layer` 而不是硬编码的 0 来访问 KV 缓存，观察问题是否解决。
 
----
+- **预期结果**：你会看到在 PP 场景下，`get_value_buffer(0)` 会抛出 IndexError，因为第 0 层不在当前阶段的 KV 缓存中。改用 `get_value_buffer(start_layer)` 后问题解决。
 
 ## 🔥 重要更新
 
-1. **LTX-2 可中断 CUDA Graph 加速（commit #2）**：H200 上端到端延迟从 10.75 秒降到 6.90 秒（1.56 倍加速），这是扩散模型推理性能的重大提升。
-2. **Nemotron W4A16 NVFP4 MoE 后端修复（commit #5）**：修复了 MoE 模型在 4-bit 量化下可能选错推理后端的问题，并增加了防护性检查。
-3. **流水线并行 KV cache 索引修复（commit #9）**：修复了 PP 模式下 Triton 注意力后端的 IndexError，这是 PP 走向成熟的重要一步。
-4. **健康检查端点拆分（commit #10）**：新增 `/liveness` 和 `/health` 分离，为 Kubernetes 部署提供标准探针方案。
+1. **LTX-2 可中断 CUDA Graph 加速（Commit 2）**：将 H200 上两阶段端到端推理从 10.75 秒降至 6.90 秒，1.56 倍加速，是 Diffusion 性能优化的重要突破。
 
----
+2. **Nemotron W4A16 NVFP4 MoE 后端修复（Commit 5）**：修复了量化 MoE 层在特定配置下的错误，并强制使用 Marlin 后端，对使用 NVFP4 量化模型的用户至关重要。
+
+3. **Pipeline Parallelism 下 Triton attention 的 IndexError 修复（Commit 9）**：修复了 PP 场景下 KV 缓存访问的 bug，对使用 PP 部署大模型的用户有直接影响。
+
+4. **Diffusion 服务健康检查分离（Commit 10）**：引入 `/liveness` 和 `/health` 分离端点，使 Kubernetes 等编排系统能更精确地判断服务状态，是生产级部署的重要改进。
 
 ## 📋 逐条解读
 
-### 1. 移除不再使用的 HiMambaRadixTree
-- **代码层面**：删除了 `hi_mamba_radix_cache.py` 整个文件（约 2178 行），这是一个用于 Mamba 模型的缓存数据结构。
-- **新手概念课堂**：Radix Tree（基数树）是一种高效存储和检索前缀的数据结构，类似字典的树形版本。Mamba 是一种状态空间模型。这个类曾经用于混合缓存，现在被废弃了。
-- **对你有什么影响**：无直接影响，这是清理死代码。但说明项目在持续演进，旧的缓存策略正在被更简单的方案替代。
+### 1. Remove the HiMambaRadixTree that is no longer in use (删除不再使用的 HiMambaRadixTree)
+- **代码层面**：删除了 `python/sglang/srt/mem_cache/hi_mamba_radix_cache.py` 整个文件（约 2178 行）。这是一个用于管理 Mamba 模型 KV 缓存的旧数据结构，已被更通用的 `MambaRadixCache` 取代。
+- **新手概念课堂**：想象一个图书馆的索引系统。旧系统（HiMambaRadixTree）是为特定类型的书（Mamba 模型）设计的，但后来发现通用系统（MambaRadixCache）也能处理，而且更简洁，所以把旧系统拆掉了。
+- **对你有什么影响**：这是内部清理，普通用户无感知。但如果你在代码中引用了这个模块，需要更新。
 
-### 2. LTX-2 启用可中断 CUDA Graph
-- **代码层面**：修改了 `breakable_cuda_graph/runner.py` 和 LTX-2 的 denoising 阶段。增加了诊断日志（签名不匹配时输出差异字段），并将最大分段数从 128 提升到 512。
-- **新手概念课堂**：可中断 CUDA Graph 是把一个长计算图切成多个"分段"，每个分段可以独立重放。LTX-2 有 48 个 Dual-Tower 块，每个块有 6 个注意力断点，所以需要更大的分段上限。
-- **对你有什么影响**：如果你使用 LTX-2 文生视频模型，延迟会显著降低（1.56 倍加速）。
+### 2. Enable breakable CUDA graph for LTX-2 (为 LTX-2 启用可中断 CUDA Graph)
+- **代码层面**：修改了 `breakable_cuda_graph/runner.py`，将最大段数从 128 提升到 512（因为 LTX-2 双塔结构的注意力断点更多）；同时在 `denoising.py` 中，将 RoPE 坐标的构建移到 CUDA Graph 捕获区域之外，避免在捕获期间执行非法的 H2D 拷贝。
+- **新手概念课堂**：CUDA Graph 就像录制一段视频（预编译 GPU 操作），录制完成后可以无限重放。但录制期间不能有"即兴表演"（如从 CPU 拷贝数据到 GPU），所以需要把所有准备工作提前做好。可中断 CUDA Graph 则允许在录制中插入"断点"，方便某些操作在重放时动态执行。
+- **对你有什么影响**：如果你使用 LTX-2 模型生成视频，会感受到明显的速度提升（1.56 倍）。
 
-### 3. 调度器 RPC 超时显式化
-- **代码层面**：新增 `--scheduler-rpc-timeout` 参数，默认不设置（避免长任务被误杀）。同时修复了服务器关闭时视频任务未正确取消的问题。
-- **新手概念课堂**：RPC（远程过程调用）是不同进程间的函数调用。调度器 RPC 是 HTTP 服务器向调度器发送请求的通道。如果任务排队很久，默认超时可能导致任务失败。
-- **对你有什么影响**：长视频生成任务不再因为传输层超时而失败。服务器优雅关闭时，正在生成的视频任务会被正确取消。
+### 3. Make scheduler rpc deadlines explicit (使调度器 RPC 超时显式化)
+- **代码层面**：新增 `--scheduler-rpc-timeout` 参数，允许用户设置调度器 RPC 的端到端超时；同时在 HTTP 服务器关闭时，增加了对视频生成任务的取消和清理（`shutdown_video_jobs`）。
+- **新手概念课堂**：RPC（远程过程调用）就像你打电话给朋友让他帮你做事。如果朋友一直不回应（如排队等待），你可能需要设置一个"最长等待时间"（超时），避免无限等待。这个 commit 让这个超时时间可以由用户控制，而不是默认无限等待。
+- **对你有什么影响**：如果你部署了 SGLang Diffusion 服务，可以设置合理的超时时间，避免长时间运行的任务被意外中断，或者在需要时强制限制请求时长。
 
-### 4. 修复 VAE 快速路径测试
-- **代码层面**：修改了测试文件，适应新的 `use_vae_fast_path` 上下文管理器 API。之前通过 `gate.enabled` 属性切换，现在改用上下文管理器。
-- **新手概念课堂**：VAE（变分自编码器）是扩散模型中负责图像编解码的组件。"快速路径"是指用融合算子（fused kernels）替换多个独立算子，提高速度。上下文管理器是 Python 中 `with` 语句使用的对象。
-- **对你有什么影响**：这是测试代码，但反映了 API 设计趋势——用上下文管理器控制优化开关比手动设置属性更安全。
+### 4. Fix vae fast path test after the gate refactor (修复 VAE 快速路径测试)
+- **代码层面**：更新了 `test_autoencoder_kl_fastpath.py` 测试文件，适配新的 `use_vae_fast_path` 上下文管理器接口，不再直接操作 `gate.enabled` 属性。
+- **新手概念课堂**：VAE（变分自编码器）是扩散模型中负责图像编解码的组件。"快速路径"是一种优化手段，但保证优化后的结果与原始结果一致非常重要。测试就是用来验证这一点的。
+- **对你有什么影响**：这是测试代码的维护，普通用户无感知。
 
-### 5. 修复 Nemotron W4A16 NVFP4 MoE 后端
-- **代码层面**：在 `overrides.py` 中检测是否包含 W4A16_NVFP4 量化的 MoE 层，如果是则强制使用 `marlin` 后端并要求禁用 `moe-a2a-backend`。同时修复了 Marlin 权重 padding 后的维度计算。
-- **新手概念课堂**：MoE（混合专家）模型有多个"专家"子网络，每次只激活其中几个。NVFP4 是 NVIDIA 的 4-bit 浮点格式。Marlin 是一种高效的矩阵乘法内核。
-- **对你有什么影响**：如果你使用 Nemotron 模型的 4-bit 量化版本，推理不再崩溃或产生错误结果。
+### 5. Fix Nemotron W4A16 NVFP4 MoE backend (修复 Nemotron W4A16 NVFP4 MoE 后端)
+- **代码层面**：在 `overrides.py` 中，检测到 W4A16_NVFP4 量化的 MoE 层时，强制要求使用 `--moe-a2a-backend=none` 和 `--moe-runner-backend=marlin`；在 `marlin_utils_fp4.py` 中，修复了 Marlin 权重 padding 后维度不匹配的问题，增加了对 `padded_size_k` 的处理。
+- **新手概念课堂**：MoE（混合专家）模型将输入路由到多个"专家"子网络。NVFP4 是一种 4-bit 浮点量化格式，能大幅减少显存占用。Marlin 是一种高效的矩阵乘法内核。这个 commit 确保这些技术能正确组合使用。
+- **对你有什么影响**：如果你使用 Nemotron 模型的 NVFP4 量化版本，这个修复能避免运行时错误，并确保推理结果正确。
 
-### 6. 加速 TP 和 FSDP checkpoint 加载
-- **代码层面**：重构了 FSDP 加载流程，支持直接从 rank-local checkpoint 加载（跳过 safetensors 迭代器），并优化了参数名映射。
-- **新手概念课堂**：FSDP（完全分片数据并行）把模型参数切分到多张 GPU。Checkpoint 是模型权重的存档。之前加载时需要逐参数处理，现在可以批量快速加载。
-- **对你有什么影响**：多卡部署时模型加载时间大幅缩短，特别是大模型（如 30B+）从几分钟降到几十秒。
+### 6. Speed up tp and fsdp checkpoint loading (加速 TP 和 FSDP 检查点加载)
+- **代码层面**：优化了 `fsdp_load.py` 中的检查点加载逻辑，增加了 `rank_local_checkpoint` 的使用，减少了对 safetensors 格式的依赖，并简化了部分参数加载流程。
+- **新手概念课堂**：FSDP（Fully Sharded Data Parallel）将模型参数分片到多个 GPU 上。检查点（Checkpoint）是模型参数的持久化快照。加载检查点时，如果每个 GPU 只加载自己需要的分片（rank-local），而不是加载全部再分发，速度会快很多。
+- **对你有什么影响**：如果你使用多 GPU 加载大型 Diffusion 模型，会感受到检查点加载时间明显缩短。
 
-### 7. 分布式初始化前绑定设备
-- **代码层面**：将设备绑定（`set_device`）移到分布式初始化之前，并抽象为 `current_platform.set_device` 接口，支持 CUDA、NPU、MPS 等平台。
-- **新手概念课堂**：分布式训练中，每个进程必须先绑定到特定 GPU，再初始化通信组。之前是先初始化再绑定，可能导致设备错乱。
-- **对你有什么影响**：多卡推理/训练时，每张卡能正确分配到对应的 GPU，避免"所有进程都跑在 GPU 0"的问题。
+### 7. Bind each rank to accelerator before distributed init (在分布式初始化前绑定设备)
+- **代码层面**：在 `parallel_state.py` 中，将 `current_platform.set_device(device)` 提前到 `init_distributed_environment` 之前；在 `gpu_worker.py` 中，使用 `current_platform.set_device` 替代 `torch.get_device_module().set_device`。
+- **新手概念课堂**：在分布式训练/推理中，每个进程（rank）需要绑定到特定的 GPU 设备。如果绑定太晚，可能会导致设备分配错误。提前绑定可以确保后续操作都在正确的设备上执行。
+- **对你有什么影响**：修复了多 GPU 环境下可能出现的设备分配错误，对使用多 GPU 部署的用户更稳定。
 
-### 8. 支持 TP 下的可中断 CUDA Graph
-- **代码层面**：在 CUDA Graph 捕获时进入 TP 组的 `graph_capture` 上下文，确保自定义 all-reduce 在图捕获期间使用正确的路径。
-- **新手概念课堂**：TP（张量并行）把单个算子的计算切分到多张 GPU。CUDA Graph 捕获时，通信操作（如 all-reduce）必须也是图安全的。
-- **对你有什么影响**：TP 模式下扩散模型也能使用 CUDA Graph 加速了。
+### 8. Enable BCG with TP (启用 BCG 与 TP 组合)
+- **代码层面**：在 `breakable_cuda_graph/runner.py` 中，新增 `_tp_graph_capture` 上下文管理器，在 CUDA Graph 捕获期间进入 TP 组的图捕获上下文；在 `group_coordinator.py` 中，优化了 `graph_capture` 上下文，确保自定义 all-reduce 在捕获时使用图路径。
+- **新手概念课堂**：TP（张量并行）将模型权重切分到多个 GPU 上，每个 GPU 计算一部分。BCG（可中断 CUDA Graph）需要在捕获期间确保所有通信操作也符合图捕获的要求。这个 commit 让两者可以同时使用。
+- **对你有什么影响**：如果你使用 TP 和 BCG 的组合，这个修复能避免图重放时的错误，并提高性能。
 
-### 9. 修复 Triton 后端的 PP 索引错误
-- **代码层面**：将 `get_value_buffer(0)` 改为 `get_value_buffer(start_layer)`，在多处（`triton_backend.py`、`memory_pool.py`）修复。
-- **新手概念课堂**：KV cache 是按层存储的。PP 模式下，每张卡只存部分层的 KV cache。用 `0` 索引会导致访问不存在的第 0 层。
-- **对你有什么影响**：使用 PP + Triton 注意力后端的组合不再崩溃。
+### 9. Fix IndexError in Triton backend with pipeline parallelism (修复 PP 下 Triton 后端的 IndexError)
+- **代码层面**：在 `triton_backend.py` 和 `memory_pool.py` 中，将 `get_value_buffer(0)` 改为 `get_value_buffer(start_layer)`，避免在 PP 场景下访问不存在的第 0 层。
+- **新手概念课堂**：在 PP 中，每个 GPU 只负责模型的一部分层。假设模型有 12 层，GPU 0 负责 0-5 层，GPU 1 负责 6-11 层。GPU 1 的 KV 缓存中没有第 0 层的数据，所以访问 `get_value_buffer(0)` 会出错，应该访问 `get_value_buffer(6)`（即 `start_layer`）。
+- **对你有什么影响**：如果你使用 PP 部署模型，这个修复能避免运行时崩溃。
 
-### 10. 健康检查端点拆分
-- **代码层面**：新增 `/liveness` 端点（进程存活），`/health` 在 warmup 期间返回 503，完成后返回 200。
-- **新手概念课堂**：Kubernetes 有 liveness（进程是否活着）、readiness（是否准备好接收流量）、startup（启动是否完成）三种探针。之前 SGLang 只有一个 `/health`，无法区分"还在启动"和"已经挂了"。
-- **对你有什么影响**：部署到 Kubernetes 时，探针配置更标准，不会因为启动慢而被误杀。
+### 10. Gate /health on warmup completion and add liveness endpoint (健康检查与存活检查分离)
+- **代码层面**：新增 `/liveness` 端点（始终返回 200），并将 `/health` 和 `/health_generate` 与服务器预热完成状态绑定（预热中返回 503，完成后返回 200）。
+- **新手概念课堂**：在 Kubernetes 等编排系统中，有两种探针：存活探针（Liveness Probe）用于判断进程是否还活着，就绪探针（Readiness Probe）用于判断服务是否可以接收流量。以前 `/health` 同时承担两个角色，预热时间长时会导致误判。现在分离后，`/liveness` 管存活，`/health` 管就绪。
+- **对你有什么影响**：如果你在 Kubernetes 上部署 SGLang Diffusion，可以更准确地配置探针，避免预热期间服务被误杀。
 
-### 11. 支持 LingBot-Video MoE 30B 模型
-- **代码层面**：新增 `lingbot_video_moe.py` 配置文件，定义了模型架构参数（48 层、128 专家、每 token 激活 8 个专家），并注册到模型列表。
-- **新手概念课堂**：LingBot-Video 是新的文生视频模型，MoE 版本有 30B 参数但推理时只激活部分参数。`patch_size=(1,2,2)` 表示视频的空间和时间维度的下采样倍率。
-- **对你有什么影响**：可以直接用 SGLang 运行 LingBot-Video MoE 30B 模型生成视频。
+### 11. Support LingBot-Video MoE 30B T2V (支持 LingBot-Video MoE 30B 文生视频模型)
+- **代码层面**：新增 `lingbot_video_moe.py` 配置文件，定义了 LingBot-Video MoE 模型的架构参数（如 48 层、128 个专家、每个 token 激活 8 个专家等），并在 `__init__.py` 中注册。
+- **新手概念课堂**：MoE 模型包含多个"专家"子网络，每个 token 只激活其中一小部分，从而在保持模型容量的同时降低计算量。LingBot-Video 是一个视频生成模型，支持文生视频（T2V）。
+- **对你有什么影响**：如果你使用 LingBot-Video MoE 模型，现在可以在 SGLang 中直接加载和推理。
 
-### 12. Ring 注意力作为后端能力
-- **代码层面**：新增 `supports_ring_rotation()` 类方法，FlashAttention 和 SageAttention 返回 True，其他后端默认 False。Ring 注意力只在支持的后端上启用。
-- **新手概念课堂**：Ring Attention（环形注意力）是把长序列切分到多张 GPU 上，像接力棒一样循环传递计算。它需要内核能输出 softmax 的 LSE（log-sum-exp）才能合并结果。
-- **对你有什么影响**：使用不兼容的注意力后端时，Ring 注意力会被自动禁用，避免错误结果。
+### 12. Make ring admission a backend capability (将 Ring Attention 支持声明为后端能力)
+- **代码层面**：在 `AttentionBackend` 基类中新增 `supports_ring_rotation` 方法（默认返回 False），并在 FlashAttention 和 SageAttention 后端中重写为 True。在 `layer.py` 中，根据后端能力决定是否允许 Ring Attention。
+- **新手概念课堂**：Ring Attention 是一种处理超长序列的注意力机制，将序列分片到多个 GPU 上，通过环形通信合并结果。但并非所有注意力后端都支持，所以需要显式声明能力。
+- **对你有什么影响**：避免了使用不支持 Ring Attention 的后端时出现错误，提高了系统的健壮性。
 
-### 13. Qwen 的 masked varlen 元数据改为 host 端构建
-- **代码层面**：在 `qwen_image.py` 中，如果已有 `txt_seq_lens`，则直接用它在 CPU 上构建 varlen 元数据（`build_varlen_mask_meta_from_ranges`），避免每步去 GPU 上做 nonzero 操作。
-- **新手概念课堂**：Varlen（变长）元数据描述每个序列的起始和结束位置。之前通过 `mask.nonzero()` 在 GPU 上计算，每次都要设备同步，很慢。
-- **对你有什么影响**：Qwen 图像模型的每个 denoising 步骤都更快了。
+### 13. Build Qwen's masked varlen metadata host-side (在 CPU 侧构建 Qwen 的掩码变长元数据)
+- **代码层面**：在 `qwen_image.py` 中，当 `txt_seq_lens` 可用时，直接在 CPU 侧构建 varlen 注意力元数据（`cu_seqlens`、`indices` 等），避免在 GPU 上使用 `nonzero` 操作（会触发设备同步）。
+- **新手概念课堂**：变长注意力（Varlen Attention）需要知道每个序列的长度和位置信息。以前这些信息通过 GPU 上的 `nonzero` 操作计算，会触发 GPU 和 CPU 的同步（很慢）。现在直接从已有的 `txt_seq_lens` 在 CPU 上计算，避免同步。
+- **对你有什么影响**：如果你使用 Qwen 图像生成模型，会感受到每一步去噪的延迟降低。
 
-### 14. SWA chunk-cap 测试迁移到注册套件
-- **代码层面**：将 `test_schedule_policy.py` 中的 SWA 相关测试迁移到 `test_prefill_adder.py`，并调整了导入。
-- **新手概念课堂**：SWA（滑动窗口注意力）只关注最近的 token。chunk-cap 是调度器为避免死锁而设计的"逃生舱"逻辑。
-- **对你有什么影响**：纯测试代码调整，无用户可见影响。
+### 14. Move SWA chunk-cap hatch tests into the registered suite (将 SWA 块上限测试移到注册测试套件)
+- **代码层面**：将 `test/manual/test_schedule_policy.py` 中的 SWA 块上限相关测试移到 `test/registered/unit/managers/test_prefill_adder.py` 中，使其在 CI 中自动运行。
+- **新手概念课堂**：SWA（Sliding Window Attention）是一种只关注最近 token 的注意力机制，节省显存。"块上限"（Chunk Cap）是一种调度策略，防止内存不足。测试移动意味着这些测试现在会自动在 CI 中运行，确保功能不被破坏。
+- **对你有什么影响**：这是测试基础设施的改进，普通用户无感知，但提高了代码质量保证。
 
-### 15. 昇腾 NPU 版本升级推荐
-- **代码层面**：文档更新，推荐版本从 `v0.5.13.post1-cann9.0.0-a3` 升级到 `cann9.0.0-a3-v0.5.16`。
-- **新手概念课堂**：昇腾（Ascend）是华为的 AI 芯片。CANN 是其软件栈。镜像标签格式从 `v版本-cann版本-型号` 改为 `cann版本-型号-v版本`。
-- **对你有什么影响**：使用昇腾 NPU 的用户应该升级到新版本以获取最新修复。
+### 15. Upgrade recommended sglang version on Ascend NPU (更新 Ascend NPU 推荐版本)
+- **代码层面**：将 Ascend NPU 文档中推荐的 SGLang 版本从 `v0.5.13.post1` 更新到 `v0.5.16`，并更新了对应的 Docker 镜像标签。
+- **新手概念课堂**：Ascend NPU 是华为的 AI 芯片。SGLang 提供了针对该平台的 Docker 镜像，版本更新意味着包含了更多 bug 修复和性能优化。
+- **对你有什么影响**：如果你在华为 Ascend NPU 上使用 SGLang，建议升级到新版本以获得更好的体验。
 
-### 16. Z-Image 的 bit-exact 融合 QK-Norm
-- **代码层面**：新增 Triton 内核 `_qk_rmsnorm_native_kernel`，精确复现 eager 模式的数值计算顺序（包括 bf16 舍入点），实现 bit-exact 对齐。
-- **新手概念课堂**：QK-Norm 是注意力机制中对 Query 和 Key 做归一化的操作。bit-exact 意味着融合内核和原始实现产生完全相同的输出（`torch.equal` 为 True）。
-- **对你有什么影响**：Z-Image 模型推理速度提升 6.4%，且输出与之前的实现完全一致。
+### 16. Z-Image bit-exact fused qk-norm (Z-Image 位精确融合 QK-Norm)
+- **代码层面**：在 `zimage_native_norm.py` 中新增 `_qk_rmsnorm_native_kernel` Triton 内核，实现了与 eager 路径位精确（bit-exact）匹配的 QK-Norm 计算，并进行了融合优化。
+- **新手概念课堂**：QK-Norm 是注意力机制中在计算 Q 和 K 的点积之前对它们做归一化（RMSNorm）的操作。"位精确"意味着优化后的结果与原始结果在二进制层面完全相同，这是为了保证模型输出的一致性。"融合"意味着将多个操作合并为一个内核，减少内存读写。
+- **对你有什么影响**：如果你使用 Z-Image 模型，会感受到端到端推理速度提升（6.4%），同时保证输出与原始版本完全一致。
 
-### 17. 修复 prefill CP 图溢出
-- **代码层面**：新增 `required_local_tokens()` 和 `select_replay_bucket()` 方法，在 zigzag 布局下计算实际需要的本地 token 数，并选择最小的满足要求的捕获桶。
-- **新手概念课堂**：CP（上下文并行）把序列切分到多张 GPU。Zigzag 是一种负载均衡的切分方式。CUDA Graph 是预分配的，如果实际输入超过捕获时的尺寸就会溢出。
-- **对你有什么影响**：长序列 prefill 不再因为图尺寸不足而崩溃。
+### 17. Fix prefill CP graph overflow with larger bucket search (修复预填充 CP 图溢出)
+- **代码层面**：在 `bcg.py` 中，新增 `required_local_tokens` 方法，根据 zigzag CP 布局计算所需的本地 token 数；新增 `select_replay_bucket` 方法，在重放时选择最小的、能容纳所需本地 token 的捕获桶。
+- **新手概念课堂**：CP（Context Parallelism）将长序列的上下文切分到多个 GPU 上。Zigzag 布局是一种特定的切分方式。CUDA Graph 需要预分配内存（桶），如果实际请求需要的 token 数超过预分配的大小，就会溢出。这个 commit 让系统在重放时能选择更大的桶。
+- **对你有什么影响**：修复了预填充阶段 CUDA Graph 可能溢出的问题，提高了长序列推理的稳定性。
 
-### 18. FlashInfer 的 DSV4 mHC 融合
-- **代码层面**：新增 `SGLANG_OPT_USE_FLASHINFER_MHC` 环境变量（默认关闭），实现了 FlashInfer 的 `mhc_pre_big_fuse` 与 DeepGEMM 的 `tf32_hc_prenorm_gemm` 融合。
-- **新手概念课堂**：mHC（multi-head Compression）是 DeepSeek-V4 的注意力压缩机制。融合是指把多个算子合并成一个，减少内存访问和 kernel 启动开销。
-- **对你有什么影响**：这是可选优化，默认关闭。有兴趣的用户可以设置环境变量开启，观察性能变化。
+### 18. Add flashinfer mHC fusion for DSV4 (为 DSV4 添加 FlashInfer mHC 融合)
+- **代码层面**：在 `deepseek_v4.py` 中新增 `_flashinfer_hc_pre` 函数，使用 FlashInfer 的 `mhc_pre_big_fuse` 内核替代原有的 TileLang 实现，并支持 split-K 优化。新增环境变量 `SGLANG_OPT_USE_FLASHINFER_MHC` 控制开关。
+- **新手概念课堂**：mHC（Multi-Head Companion）是 DeepSeek-V4 模型中的一种注意力机制。FlashInfer 是一个高性能 GPU 内核库。这个 commit 为 mHC 的预处理阶段提供了新的高性能实现，并允许用户通过环境变量选择。
+- **对你有什么影响**：如果你使用 DeepSeek-V4 模型，可以通过设置环境变量 `SGLANG_OPT_USE_FLASHINFER_MHC=1` 来尝试新的加速实现。
 
-### 19. 修复 masked-path 复制的 SP 守卫
-- **代码层面**：将 `NotImplementedError` 的条件从"有复制 token"改为"有复制 token 且处于 SP 模式且 SP 大小 > 1"。
-- **新手概念课堂**：SP（序列并行）下，序列被切分到多张卡，复制的前缀/后缀会被重复计算导致错误。但单卡时，mask 已经描述了完整序列，复制计数无意义但也不会有问题。
-- **对你有什么影响**：单卡运行时不误报错误。
+### 19. Scope the masked-path replicated guard to SP runs (将掩码路径的复制保护限定在 SP 场景)
+- **代码层面**：在 `layer.py` 中，将"掩码路径不支持复制前缀/后缀"的保护条件从"总是生效"改为"仅在序列并行（SP）且世界大小大于 1 时生效"。
+- **新手概念课堂**：在 SP 中，序列被切分到多个 GPU 上，每个 GPU 只处理一部分。"复制前缀/后缀"是指在每个 GPU 上都复制相同的前缀/后缀 token。在 SP 下这会导致数据重复，所以需要拒绝；但在单 GPU 上，掩码已经描述了完整序列，复制计数没有意义，所以可以忽略。
+- **对你有什么影响**：修复了单 GPU 场景下使用掩码注意力时的误报错误。
 
-### 20. 修复 DSpark 分数模拟接受
-- **代码层面**：将 `_sample_simulated_acc_len` 改名为 `sample_simulated_acc_len`（公开 API），并在 DSpark 验证器中每次调用该函数而不是缓存固定值。
-- **新手概念课堂**：DSpark 是推测解码的一种实现。`simulate_acc_len` 是基准测试用的模拟接受长度，之前缓存了固定值导致模拟不准确。
-- **对你有什么影响**：使用 DSpark 做基准测试时，模拟结果更准确。
+### 20. Fix fractional simulated acceptance in DSpark (修复 DSpark 中的分数模拟接受率)
+- **代码层面**：在 `dspark_verify.py` 中，将 `_simulated_correct_len` 的返回值从 `round()` 后的整数改为调用 `sample_simulated_acc_len` 动态采样；在 `spec_utils.py` 中，将 `_sample_simulated_acc_len` 重命名为 `sample_simulated_acc_len` 并导出。
+- **新手概念课堂**：DSpark 是一种投机解码（Speculative Decoding）算法，用一个草稿模型生成多个候选 token，再用目标模型验证。"模拟接受率"是用于基准测试的开关，模拟草稿模型的接受长度。以前这个值只能是整数（通过 `round()`），现在可以支持分数（如 2.5），通过采样实现。
+- **对你有什么影响**：如果你使用 DSpark 进行基准测试，现在可以设置更精细的模拟接受率，获得更准确的性能评估。
 
 ---
 > 🤖 Generated by [daily-llm-tracker](https://github.com/ball-out-of-tune/daily-llm-tracker)
