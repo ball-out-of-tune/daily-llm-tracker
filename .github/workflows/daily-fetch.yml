@@ -28,7 +28,7 @@ jobs:
       - name: Run fetch & translate
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
         run: python fetch_and_translate.py
 
       - name: Commit & push results

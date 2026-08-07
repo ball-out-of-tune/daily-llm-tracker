@@ -1,6 +1,6 @@
 """
 每日拉取 vLLM / SGLang 最新 commits，并用 AI 做新手向中文解读。
-- 有 ANTHROPIC_API_KEY → AI 翻译
+- 有 DEEPSEEK_API_KEY → AI 翻译（DeepSeek）
 - 没有 → 只存原始 commits
 """
 import os, sys, json, re
@@ -13,7 +13,7 @@ REPOS = [
     ("sgl-project/sglang", "sglang"),
 ]
 OUTPUT_DIR = "output"
-ANTHROPIC_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
+DEEPSEEK_KEY = os.environ.get("DEEPSEEK_API_KEY", "")
 
 # ── 1. 拉取 commits ───────────────────────────────────────────
 def fetch_commits(owner_repo: str, since_iso: str) -> list[dict]:
@@ -107,27 +107,27 @@ def build_prompt(repo_name: str, commits: list[dict]) -> str:
 
 
 def ai_translate(prompt: str) -> str:
-    """调用 Anthropic API 做翻译"""
+    """调用 DeepSeek API 做翻译（兼容 OpenAI 格式）"""
     import urllib.request
 
     body = json.dumps({
-        "model": "claude-haiku-4-5-20251001",
+        "model": "deepseek-chat",
         "max_tokens": 2048,
+        "temperature": 0.7,
         "messages": [{"role": "user", "content": prompt}],
     }).encode()
 
     req = urllib.request.Request(
-        "https://api.anthropic.com/v1/messages",
+        "https://api.deepseek.com/v1/chat/completions",
         data=body,
         headers={
             "Content-Type": "application/json",
-            "x-api-key": ANTHROPIC_KEY,
-            "anthropic-version": "2023-06-01",
+            "Authorization": f"Bearer {DEEPSEEK_KEY}",
         },
     )
     with urllib.request.urlopen(req, timeout=120) as resp:
         result = json.loads(resp.read().decode())
-    return result["content"][0]["text"]
+    return result["choices"][0]["message"]["content"]
 
 
 # ── 3. 原始模式（无 AI） ───────────────────────────────────────
@@ -157,8 +157,8 @@ def main():
         print(f"   {len(filtered)} significant commits (filtered out {len(raw) - len(filtered)})")
         all_commits[name] = filtered
 
-    has_ai = bool(ANTHROPIC_KEY)
-    print(f"\n🤖 AI translation: {'ENABLED' if has_ai else 'DISABLED (set ANTHROPIC_API_KEY to enable)'}")
+    has_ai = bool(DEEPSEEK_KEY)
+    print(f"\n🤖 AI translation: {'ENABLED' if has_ai else 'DISABLED (set DEEPSEEK_API_KEY to enable)'}")
 
     # 生成报告
     parts = [

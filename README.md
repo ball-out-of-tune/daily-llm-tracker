@@ -30,12 +30,12 @@ gh repo create daily-llm-tracker --public --push --source .
 
 ### 2. 启用 AI 翻译（可选但推荐）
 
-1. 去 [Anthropic Console](https://console.anthropic.com/) 获取 API Key
+1. 去 [DeepSeek 开放平台](https://platform.deepseek.com/) 获取 API Key
 2. 在仓库 Settings → Secrets and variables → Actions → New repository secret
-   - Name: `ANTHROPIC_API_KEY`
-   - Value: `sk-ant-...`
+   - Name: `DEEPSEEK_API_KEY`
+   - Value: `sk-...`
 
-> 💰 费用极低：每天约 $0.01-0.03（使用 Claude Haiku），一个月不到 $1
+> 💰 费用极低：DeepSeek API 非常便宜，每天约 ¥0.01-0.05，一个月不到 ¥2
 
 > ⚠️ 不设置 API Key 也能用，但只会保存原始英文 commits，没有中文解读
 
@@ -52,7 +52,7 @@ GitHub API 拉取 commits
     ↓
 过滤 (跳过 CI/typo/version bump)
     ↓
-Anthropic API 翻译成中文  ← 需要 API Key
+DeepSeek API 翻译成中文  ← 需要 API Key
     ↓
 写入 output/ 目录
     ↓
