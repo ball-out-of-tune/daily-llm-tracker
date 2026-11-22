@@ -1,540 +1,500 @@
-# 🚀 vLLM & SGLang 每日更新 — 2026-11-21
+# 🚀 vLLM & SGLang 每日更新 — 2026-11-22
 
-> 自动生成于 2026-11-21 08:44 UTC | AI 解读: ✅ 含代码解读
+> 自动生成于 2026-11-22 08:47 UTC | AI 解读: ✅ 含代码解读
 
 ## vllm
-## 💡 今日关键词（放在最前面！）
+## 💡 今日关键词
 
-- **关键词：安全加固（Security Hardening）**
-  - 一句话通俗解释：给服务器加"限流阀门"，防止恶意用户用超大请求把服务打挂。
-  - 为什么社区在关注：今天 20 个 commit 里有 3 个是安全相关（#53473、#68249、#53131），说明 vLLM 开始把"面向公网部署"当成正经需求，DoS 防护、整数溢出这类"老坑"正在被系统性地清理。
-  - 对新手意味着什么：如果你以后要部署推理服务，理解"输入上限/资源预算"是必备技能，别以为模型跑通就完事了。
+- **关键词：KV Offload 的读写方向控制（access_mode）**
+  - 一句话通俗解释：给 KV 缓存卸载的存储层加一个"只读 / 只写 / 读写"开关，让一个实例可以专门写缓存、另一个专门读缓存。
+  - 为什么社区在关注：这说明 KV 缓存卸载已经从"单机省显存"进化到"多实例共享缓存池"的架构，社区在认真做缓存的分工协作（一个实例预热、多个实例消费）。
+  - 对新手意味着什么：如果你在学推理优化，理解"缓存分层 + 读写解耦"是迈向大规模推理系统的关键一步，这类设计在真实生产里非常常见。
 
-- **关键词：ROCm / AMD 生态适配**
-  - 一句话通俗解释：让 vLLM 在 AMD GPU 上也能跑得又快又稳。
-  - 为什么社区在关注：今天有 5 个 ROCm 相关 commit（#61214、#66586、#65935、#63725、#68012、#60839），从 MoE kernel 到 attention warmup 到 bugfix 全覆盖，说明 AMD 正在成为真正的"第二平台"。
-  - 对新手意味着什么：只学 CUDA 已经不够了，HIP/ROCm 的岗位在增长，异构编程是加分项。
+- **关键词：Inkling 2 模型适配 + SM120（5090 / DGX Spark）性能优化**
+  - 一句话通俗解释：vLLM 一天内连续多个 commit 在为同一个新模型做适配，还专门针对消费级 Blackwell 显卡（sm120）优化小 batch 的矩阵乘法。
+  - 为什么社区在关注：说明新模型上线速度在加快，同时"消费级 GPU 也能跑好推理"正在成为现实需求，不再是数据中心专属。
+  - 对新手意味着什么：如果你只有一张 5090 或类似显卡，这是好消息——社区在认真优化你能用得起的硬件。
 
-- **关键词：多模态 Encoder 加速（CUDA Graphs for Vision/Audio）**
-  - 一句话通俗解释：把图像/音频编码器的执行路径"录下来"反复重放，省掉每次启动开销。
-  - 为什么社区在关注：#68831 把 CUDA Graph 从视觉扩展到 Qwen3-Omni 的音频塔，说明多模态推理的性能瓶颈正在从 LLM 主干转移到 encoder。
-  - 对新手意味着什么：想搞推理优化，多模态 encoder 是个还没被卷烂的方向。
+- **关键词：输入边界与安全加固（Security Hardening）**
+  - 一句话通俗解释：给 stop strings、stop_token_ids、bad words 这些用户可控参数加上数量上限，防止恶意请求耗尽服务器资源。
+  - 为什么社区在关注：vLLM 越来越多被部署为公网服务，安全从"可选"变成"必须"，这是成熟开源项目的标志。
+  - 对新手意味着什么：学 AI 推理不只要懂性能，还要懂"攻击面"——任何用户能传的字段都是潜在风险点。
 
-- **关键词：量化后端多样化（MXFP8 / FP8 / Compressed-Tensors）**
-  - 一句话通俗解释：同一份模型权重可以用不同"压缩格式"存，选对格式能省一半显存。
-  - 为什么社区在关注：#61214 新增 AITER Triton MXFP8 MoE 后端，#66586 修 ROCm 上 FP8 KV scale 的 bug，说明低精度格式（MXFP8/MXFP4/FP8）正在快速铺开。
-  - 对新手意味着什么：量化不再是"调个 flag"，要理解 block-wise scale、fnuz 格式差异这些细节。
+- **关键词：多模态输入的健壮性（torch.Tensor / NumPy / PIL 兼容）**
+  - 一句话通俗解释：多个 commit 在修"用户传进来的图片/视频格式和处理器预期不一致"的问题。
+  - 为什么社区在关注：多模态是当下最热的方向，但输入格式五花八门（PIL、NumPy、Tensor），兼容性 bug 是高频痛点。
+  - 对新手意味着什么：写多模态代码时，"入口处统一格式转换"是最值得养成的习惯。
 
-- **关键词：分布式模型加载与通信正确性**
-  - 一句话通俗解释：多机多卡时，怎么让每台机器高效读权重、怎么让 all-reduce 不出错。
-  - 为什么社区在关注：#68351 修了多节点预取权重的 bug，#60839 修了 AITER 自定义 all-reduce 对 int8 的崩溃，说明大集群部署的坑还很多。
-  - 对新手意味着什么：分布式不是"加 --tensor-parallel-size 就完事"，page cache、通信 dtype 都是真问题。
+- **关键词：错误分类与可观测性（Error Classification）**
+  - 一句话通俗解释：把笼统的 `ValueError` 换成带参数名、带上下文的 `VLLMValidationError` / `RuntimeError`。
+  - 为什么社区在关注：错误信息质量直接影响用户体验和排障效率，这是工程成熟度的体现。
+  - 对新手意味着什么：写代码时"抛什么异常、带什么信息"是基本功，好的错误信息能省下几小时的 debug。
 
 ---
 
 ## 🧪 重要知识点 & 动手实验
 
-### 知识点 1：请求级资源预算（Request-wide Budget）——防止 DoS 的通用模式
+- **知识点 1：KV 缓存卸载的读写方向控制（access_mode）**
+  - **是什么**：KV Offload 把 GPU 上放不下的 KV 缓存挪到 CPU 内存或磁盘/对象存储。`access_mode` 让你决定这个存储层是"只提供读取"、"只接收写入"还是"两者都行"。
+  - **为什么重要**：在多实例部署里，你可以让 A 实例只写（预热共享缓存），B、C 实例只读（直接命中缓存，跳过 prefill）。不懂这个，你可能白白浪费算力重复做 prefill；配错了（比如只读层被当成可写）会导致缓存永远不命中或写入失败。
+  - **动手试试**：
+    ```bash
+    # 先看看文档里 access_mode 的定义
+    python -c "print(open('docs/features/kv_offloading_usage.md').read()[:2000])"
 
-- **是什么**：一次 HTTP 请求可能带很多条 prompt、很多张图、很多段音频。如果不限制"这次请求总共能消耗多少资源"，攻击者发一个超大 batch 就能把显存/内存打爆。vLLM 现在用 `VLLM_MAX_COMPLETION_PROMPTS`、`VLLM_MAX_MEDIA_REQUEST_DECODE_BYTES`、`VLLM_MAX_MEDIA_REQUEST_DOWNLOAD_SIZE_MB` 这类环境变量给"整个请求"设上限。
-- **为什么重要**：真实部署中，一个恶意请求可以让整个服务 OOM 重启，影响所有用户。不懂这个，你的服务上线第一天就可能被扫。
-- **动手试试**：
-  ```bash
-  # 启动一个带 prompt 上限的 embedding 服务
-  VLLM_MAX_COMPLETION_PROMPTS=8 \
-  vllm serve BAAI/bge-small-en-v1.5 --task embed --port 8000
+    # 跑一下相关的单元测试，观察 access_mode 如何影响调度
+    pytest -v tests/v1/kv_connector/unit/offloading_connector/test_scheduler.py -k "access_mode or store_beyond"
+    ```
+  - **预期结果**：测试通过，你能在输出里看到 `OffloadAccessMode.READWRITE` 等枚举被传入配置；读文档能理解 `read` / `write` / `readwrite` 三档的语义差异。
 
-  # 另开一个终端，发 9 条 prompt，应该被拒绝
-  python - <<'PY'
-  import requests
-  r = requests.post("http://localhost:8000/v1/embeddings", json={
-      "model": "BAAI/bge-small-en-v1.5",
-      "input": ["hello"] * 9,
-  })
-  print(r.status_code, r.text[:300])
-  PY
-  ```
-- **预期结果**：返回 4xx 错误，提示超过 `VLLM_MAX_COMPLETION_PROMPTS` 限制；改成 8 条则返回 200。你就理解了"请求级限流"是怎么落地的。
+- **知识点 2：多模态输入的格式归一化（PIL / NumPy / torch.Tensor）**
+  - **是什么**：不同的图像/视频处理器对输入类型有假设——有的只吃 `np.ndarray`，有的只吃 `PIL.Image`。修复方式是在入口处做 `torch.Tensor → numpy`、`np.ndarray → PIL` 的转换。
+  - **为什么重要**：用户从不同来源拿到的数据格式各异（视频解码器给 Tensor、OpenCV 给 NumPy、PIL 读图给 Image），不做归一化就会在深层代码里炸出难以定位的 `AttributeError`。
+  - **动手试试**：
+    ```python
+    import numpy as np, torch
+    from PIL import Image
+    from transformers.image_transforms import to_pil_image
 
----
+    # 模拟三种输入格式
+    arr = np.random.randint(0, 255, (64, 64, 3), dtype=np.uint8)
+    t = torch.from_numpy(arr).permute(2, 0, 1)  # CHW tensor
+    img = Image.fromarray(arr)
 
-### 知识点 2：CUDA Graph 与多模态 Encoder 的"录制-重放"
+    # 统一转成 PIL
+    for x in [arr, t, img]:
+        pil = to_pil_image(x if not isinstance(x, np.ndarray) else x)
+        print(type(x).__name__, "->", type(pil).__name__, pil.size)
+    ```
+  - **预期结果**：三种输入都能成功转成 `PIL.Image`，你会看到统一入口的价值——后续代码只需要处理一种类型。
 
-- **是什么**：CUDA Graph 是把一段 GPU 计算序列"录"成一个静态图，之后每次用不同输入重放，省掉 kernel launch 的 CPU 开销。vLLM 之前只对 LLM 主干做，现在扩展到视觉/音频 encoder（#68831、#68739）。
-- **为什么重要**：多模态场景下，encoder 的 kernel 数量可能比 LLM 主干还多，launch 开销占比高。开启后吞吐能明显提升，但要注意"动态 shape"（如图片数量变化）如何处理——vLLM 用 token budget 分桶。
-- **动手试试**：
-  ```bash
-  # 对比 eager vs cudagraph encoder 的日志/吞吐
-  vllm serve Qwen/Qwen3-ASR-0.6B \
-    --compilation-config '{"cudagraph_mm_encoder": false}' --port 8001
-  # 另开终端跑一次推理，记录吞吐
-  # 再换成 true 重启，对比
-  ```
-  或者直接跑 vLLM 的测试：
-  ```bash
-  pytest tests/models/multimodal/generation/test_audio_encoder_cudagraph.py -v
-  ```
-- **预期结果**：测试会对比 eager 和 cudagraph 两种模式的 logprobs，要求"接近"（`check_logprobs_close`），说明 graph 化不改变数值结果，只是加速。
+- **知识点 3：采样阶段的 token 屏蔽（masked_token_ids）**
+  - **是什么**：在 softmax 之前把指定 token 的 logits 设为 `-inf`，让模型永远不会采样到它们。典型场景：lm_head 里有 padding 行、或占位符 token 不该被生成。
+  - **为什么重要**：不做屏蔽时，模型偶尔会吐出无意义的占位符 token，导致下游解析失败。这是"生成可控性"的基础能力，也是结构化输出、工具调用的前置条件。
+  - **动手试试**：
+    ```python
+    from vllm import LLM, SamplingParams
 
----
+    MODEL = "vllm-project/tiny-random-LlamaForCausalLM"
+    VOCAB = 32000
+    KEEP = 1234
+    masked = [i for i in range(VOCAB) if i != KEEP]
 
-### 知识点 3：整数溢出与 int32 → int64 指针算术
+    llm = LLM(MODEL, enforce_eager=True, masked_token_ids=masked)
+    out = llm.generate("Hello my name is", SamplingParams(temperature=0, max_tokens=8))
+    print(out[0].outputs[0].token_ids)  # 应该全是 1234
+    ```
+  - **预期结果**：输出 token 全部是 `1234`，因为其他 token 的 logits 都是 `-inf`，这是验证屏蔽生效最直观的方法。
 
-- **是什么**：CUDA kernel 里 `blockIdx.x * hidden_size` 如果都是 int32，当 token 数 × hidden_size 超过 2^31（约 21 亿）时会溢出成负数，导致越界读写。#53131 把这类乘法提升到 int64。
-- **为什么重要**：大模型 + 大 batch 时，`num_tokens * hidden_size` 很容易逼近 2^31。溢出不是崩溃，是"静默写错内存"，最难查的 bug。
-- **动手试试**：
-  ```python
-  # 在 Python 里模拟 int32 溢出（numpy）
-  import numpy as np
-  a = np.int32(2**30)
-  b = np.int32(4)
-  print("int32:", a * b)          # 溢出成 0
-  print("int64:", np.int64(a) * np.int64(b))  # 正确
-  ```
-  再读一下 `csrc/layernorm_kernels.cu` 里 `const int64_t token_idx = blockIdx.x;` 这一行。
-- **预期结果**：看到 int32 乘法溢出成 0 或负数，你就明白为什么 kernel 里要把索引提升到 int64。
+- **知识点 4：异常分类——从 `ValueError` 到带上下文的 `VLLMValidationError`**
+  - **是什么**：把"参数非法"这类错误从泛泛的 `ValueError` 换成携带 `parameter` 和 `value` 字段的专用异常；把"用法错误"（比如对非生成模型调 `generate()`）从 `ValueError` 改为 `RuntimeError`。
+  - **为什么重要**：调用方可以按异常类型做不同处理（参数错误→返回 400，运行时错误→返回 500），错误信息里带参数名让用户一眼知道改哪里。
+  - **动手试试**：
+    ```python
+    from vllm import LLM
+    from vllm.exceptions import VLLMValidationError
 
----
+    try:
+        LLM("vllm-project/tiny-random-LlamaForCausalLM",
+            data_parallel_size=2)  # 单进程下不支持
+    except VLLMValidationError as e:
+        print("parameter =", e.parameter)
+        print("message   =", str(e)[:120])
+    ```
+  - **预期结果**：捕获到 `VLLMValidationError`，`e.parameter == "data_parallel_size"`，你能从异常对象直接拿到出错字段，而不是去正则匹配字符串。
 
-### 知识点 4：量化 KV Cache 与 fnuz 格式的 scale 修正
+- **知识点 5：TMA + 共享内存约束下的 kernel 调参（SM120 案例）**
+  - **是什么**：Triton kernel 用 TMA（Tensor Memory Accelerator）搬运数据时，每个 SM 的共享内存有限（SM120 约 99 KiB）。commit 8 把 `num_stages` 从 4 降到 2、`block_n` 从 128 降到 64，就是为了让两个 stage 能塞进共享内存。
+  - **为什么重要**：GPU kernel 调参不是"越大越好"——pipeline stage 太多会超出共享内存，导致编译失败或性能骤降。理解"资源约束决定参数选择"是性能优化的核心思维。
+  - **动手试试**：
+    ```python
+    # 用 Triton 官方教程感受 num_stages 对共享内存的影响
+    # 先确认环境
+    import torch, triton
+    print("triton", triton.__version__)
+    print("cuda capability", torch.cuda.get_device_capability())
 
-- **是什么**：FP8 有两种格式：e4m3（NVIDIA）和 e4m3fnuz（AMD ROCm）。fnuz 的表示范围不同，同一份 scale 在 fnuz 上需要乘一个修正系数（通常 2 倍）才能对齐。#66586 修的就是 compressed-tensors 在 ROCm 上没乘这个系数的问题。
-- **为什么重要**：不修的话，AMD 上 FP8 KV cache 的数值会偏，生成质量下降但不报错——典型的"静默精度 bug"。
-- **动手试试**：
-  ```python
-  # 观察 e4m3 与 e4m3fnuz 的表示范围差异
-  import torch
-  x = torch.tensor([448.0, 0.5, 1e-3])
-  print("e4m3:", x.to(torch.float8_e4m3fn))
-  # fnuz 在 PyTorch 里没有直接 dtype，但可以理解：最大值约 240 而非 448
-  ```
-  然后读 `vllm/model_executor/layers/quantization/compressed_tensors/compressed_tensors.py` 里 `process_weights_after_loading` 新增的 fnuz 分支。
-- **预期结果**：理解为什么同一个 scale 值在两种格式下语义不同，以及"幂等性"（第二次调用不能再乘一次）为什么重要——测试里专门验证了 `data_ptr` 不变。
-
----
-
-### 知识点 5：多节点 page cache 预取——"每台机器都要读全量"
-
-- **是什么**：加载大模型时，vLLM 会先把 checkpoint 文件读一遍"预热"到操作系统 page cache，加速后续加载。多机场景下，page cache 是**每台机器独立**的，所以每个节点都必须读全量文件；#68351 之前错误地按全局 rank 切分，导致某些节点只读了部分文件。
-- **为什么重要**：多机部署时，如果某节点没预热到全部文件，加载会变慢甚至抖动，但不会报错——又是一个"性能静默 bug"。
-- **动手试试**：
-  ```bash
-  # 观察 page cache 效果（Linux）
-  # 先清缓存（需要 root，谨慎）
-  # sudo sh -c 'echo 3 > /proc/sys/vm/drop_caches'
-  # 第一次加载计时
-  time python -c "from vllm import LLM; LLM('facebook/opt-125m')"
-  # 第二次加载计时（page cache 命中，应更快）
-  time python -c "from vllm import LLM; LLM('facebook/opt-125m')"
-  ```
-  再跑 vLLM 的单元测试看切分逻辑：
-  ```bash
-  pytest tests/model_executor/model_loader/test_prefetch_checkpoints.py -v
-  ```
-- **预期结果**：第二次加载明显更快；测试断言"每个 node 都拿到了全部 FILES"，理解"按节点切分而非按全局 rank 切分"的设计。
+    # 观察一个简单 matmul 在不同 num_stages 下的编译结果
+    # （在支持 TMA 的 GPU 上运行；否则跳过）
+    import triton.language as tl
+    @triton.jit
+    def k(X, Y, N: tl.constexpr):
+        offs = tl.arange(0, N)
+        x = tl.load(X + offs)
+        tl.store(Y + offs, x * 2)
+    ```
+  - **预期结果**：打印出你的 GPU compute capability（如 `(12, 0)` 表示 sm120）；在 sm120 上你会理解为什么社区要把 stage 数压到 2——共享内存就是硬预算。
 
 ---
 
 ## 🔥 重要更新
 
-1. **#53473 安全：pooling/scoring 路由加 prompt 数量上限** —— 之前只有 `/v1/completions` 有防 fan-out 限制，现在 `/v1/embeddings`、`/pooling`、`/classify`、`/score`、`/rerank` 全部加上，公网部署必须关注。
-2. **#68249 安全：批量请求共享媒体字节预算** —— 之前每个子请求独立算预算，攻击者可以用一个大 batch 绕过；现在整个请求共享一份预算，是 DoS 防护的关键一环。
-3. **#68831 性能：Qwen3-Omni / Qwen3-ASR 音频塔支持 Encoder CUDA Graph** —— 多模态推理性能优化的新战场，音频场景吞吐有望明显提升。
-4. **#61214 ROCm：新增 AITER Triton MXFP8 MoE 后端（gfx942）** —— MI325X 上 MXFP8 专家不再被反量化成 BF16，权重显存从 196 GiB 降到 109 GiB，是 AMD 大模型部署的重要一步。
+- **Commit 12 `[Model] Add Inkling 2 Mini`**：新增一个完整模型支持，配套 CI 任务（含 DGX Spark sm12 专项），说明社区正在快速跟进前沿模型，且覆盖消费级硬件。
+- **Commit 16 `[Bugfix][Security] Complete input-bound hardening`**：补齐之前安全 PR 遗漏的边界检查（stop strings / stop_token_ids / bad words 数量上限），是面向公网部署的关键加固。
+- **Commit 14 `[Model] Add masked_token_ids`**：新增"永不采样某些 token"的能力，是生成可控性和结构化输出的基础设施。
+- **Commit 1 `[KV Offload] Add access_mode`**：让 KV 卸载支持读写解耦，为多实例共享缓存池铺路，是架构级能力扩展。
 
 ---
 
 ## 📋 逐条解读
 
-### 1. fix(security): enforce prompt-count bound on pooling and scoring routes (#53473)
+### 1. [KV Offload] Add access_mode (read|write|readwrite)
+- **代码层面**：在 `vllm/v1/kv_offload/config.py` 新增 `OffloadAccessMode` 枚举（`READ` / `WRITE` / `READWRITE`），并把它接入 offloading spec 的配置解析；`fs`、`obj`、`p2p` 等二级存储层都新增可选 `access_mode` 字段，默认 `readwrite`。调度器在 `prepare_store` / `prepare_load` 时根据该模式决定是否真正执行写或读。测试里大量构造配置的地方补上了 `access_mode=OffloadAccessMode.READWRITE`。
+- **新手概念课堂**：想象一个共享图书馆。`readwrite` 是普通读者（能借能还）；`read` 是"只借不还"的读者（消费别人放进去的书）；`write` 是"只放不借"的捐赠者（预热书库给别人用）。这个开关让多个 vLLM 实例可以分工：一个专门把算好的 KV 写进共享存储，其他实例只读命中，省掉重复 prefill。
+- **对你有什么影响**：如果你部署多实例共享缓存，现在可以显式声明每个实例的角色，避免"只读实例误写"或"只写实例永远不命中"的配置错误；普通单机用户默认值不变，无感知。
 
-- **代码层面**：在 `vllm/entrypoints/pooling/` 下的 `pooling/protocol.py`、`scoring/protocol.py`、`classify/protocol.py` 里，给请求模型的 validator 加上 `VLLM_MAX_COMPLETION_PROMPTS` 检查；新增测试 `test_pooling_prompt_limit.py`；文档 `docs/models/pooling_models/README.md` 补充说明。
-- **新手概念课堂**：这就像餐厅规定"一桌最多点 20 道菜"——不是不让你吃，是防止有人一次点 10000 道把厨房堵死。`VLLM_MAX_COMPLETION_PROMPTS` 就是那个"每桌上限"。
-- **对你有什么影响**：如果你用 embedding/rerank 接口批量送数据，超过 1024 条（默认值）会被拒，需要拆批或调大环境变量。
+### 2. [Bugfix][Multimodal] Pass image kwargs through the OpenCUA processor
+- **代码层面**：修复 `vllm/model_executor/models/opencua.py` 的处理器，让 `mm_processor_kwargs`（比如 `max_pixels`）真正透传到内部的 Qwen2-VL 图像处理器；新增 `tests/models/multimodal/generation/test_opencua.py` 和 `processing/test_opencua.py` 验证 1920×1080 图片在 `max_pixels=512²` 下产生 312 个 image token。
+- **新手概念课堂**：`mm_processor_kwargs` 就像给相机设置的"分辨率上限"。之前 OpenCUA 的处理器把用户设的参数"吞掉了"，导致图片按默认尺寸处理，token 数爆炸。修复后参数一路传到真正干活的处理器手里。
+- **对你有什么影响**：用 OpenCUA 模型时，你设的 `max_pixels` 终于生效了，大图不再意外产生巨量 token 拖慢推理。
 
----
+### 3. [Frontend] Classify errors in offline LLM APIs
+- **代码层面**：`vllm/entrypoints/llm.py` 中，`kv_transfer_config` 解析失败和 `data_parallel_size` 单进程不支持这两处从 `ValueError` 改为 `VLLMValidationError`（带 `parameter=` 和 `value=`）；`generate` / `enqueue` / `chat` / `enqueue_chat` 在模型不是生成式时从 `ValueError` 改为 `RuntimeError`。
+- **新手概念课堂**：异常类型就像快递单上的"问题分类"。"参数填错了"（Validation）和"你拿错了工具"（Runtime）是两类问题，应该分开放。之前都塞进 `ValueError` 大筐，调用方没法区分。
+- **对你有什么影响**：写脚本调用 vLLM 时，你可以 `except VLLMValidationError` 精确捕获配置错误并提示用户改哪个参数，而不是笼统地抓 `ValueError`。
 
-### 2. [Security] Share media byte budgets across batched requests (#68249)
+### 4. [Bugfix][KV Offload] Store the chunks that fit when a request exceeds the CPU tier
+- **代码层面**：调度器在 `prepare_store` 时，如果请求的 chunk 数超过 CPU 层容量，不再整体失败，而是"能存多少存多少"，剩下的留在 `keys_to_retry` 里下个 step 继续尝试；只有请求结束时仍有未存的 chunk 才计一次 `ALLOCATION_FAILURE`。测试新增 `test_store_beyond_manager_capacity_continues_on_later_steps` 等。
+- **新手概念课堂**：就像搬家时卡车装不下所有箱子——以前是"装不下就一件都不搬"，现在是"先装满一车，剩下的下一趟再搬"。只要最后都搬完了就不算失败。
+- **对你有什么影响**：长请求的 KV 卸载不再因为"一次装不下"就完全放弃，缓存命中率提升，显存压力更平滑。
 
-- **代码层面**：在 `vllm/renderers/chat_utils/item_tracker.py` 引入 `MediaRequestBudgets` 和 `use_media_request_budgets` 上下文管理器；`PoolingIOProcessor` 等批量处理路径在进入时建立共享预算，所有子请求从同一预算扣减；测试 `test_io_processor_unit.py` 验证"只共享本请求的预算"。
-- **新手概念课堂**：好比一个旅行团共用一个"行李总重量额度"，不是每人独立额度。之前每人 20kg，10 人团能带 200kg；现在全团共享 20kg，堵住了批量绕过。
-- **对你有什么影响**：批量发多图/多音频的请求，总字节数受限于 `VLLM_MAX_MEDIA_REQUEST_DECODE_BYTES` / `VLLM_MAX_MEDIA_REQUEST_DOWNLOAD_SIZE_MB`，需要合理拆批。
+### 5. [Bugfix][Multimodal] Accept torch.Tensor videos in vLLM's own HF processors
+- **代码层面**：在 `internvl.py`、`nano_nemotron_vl.py`、`ovis2_5.py` 三个处理器的视频入口处加 `if isinstance(video, torch.Tensor): video = video.cpu().numpy()`。
+- **新手概念课堂**：不同工具对"视频"的表示不同——PyTorch 用 Tensor，OpenCV/NumPy 用 ndarray。就像有人用 Word 文档、有人用 PDF，处理器只认一种。加一行转换就是"入口处统一翻译"。
+- **对你有什么影响**：你传 `torch.Tensor` 格式的视频不再报 `AttributeError: 'Tensor' object has no attribute 'shape'` 之类的错。
 
----
+### 6. [Bugfix][Multimodal] Accept NumPy images and PIL frame videos in Muse Spark Open
+- **代码层面**：`vllm/models/muse_spark/common/processor.py` 的 `preprocess_image` 签名扩展为 `Image.Image | np.ndarray | torch.Tensor`，入口用 `to_pil_image()` 统一转换；视频分支检测"PIL 帧列表"并 `np.stack` 成 ndarray。
+- **新手概念课堂**：和第 5 条同一思路，但方向相反——这次是把 NumPy/Tensor 转成 PIL，把 PIL 帧列表转成 NumPy 数组。核心思想都是"在边界处归一化"。
+- **对你有什么影响**：Muse Spark Open 模型对输入格式更宽容，你用 PIL 逐帧读视频也能直接喂进去。
 
-### 3. [Security] Widen int32 pointer arithmetic to int64 in CUDA kernels (#53131)
+### 7. [Perf][Inkling2-Mini] Improve small M GEMM on 5090 (sm120)
+- **代码层面**：新增 `vllm/models/inkling2/nvidia/ops/ll_gemm_sm120.py`，提供 `sm12x_bf16_ll_gemm`（小 M 场景的 bf16 GEMM）和 `qkv_bmm`（Q/K/V 三个投影合并成一次 batched matmul）；`attention.py` 的 `_project` 在 `use_qkv_bmm` 为真时走融合路径；`loop.py` 的 `blend` 用 `sm12x_bf16_ll_gemm` 替换 `torch.bmm`。测试从 `test_sm12x_gemv_*` 改名为 `test_sm12x_ll_gemm_*`。
+- **新手概念课堂**：小 batch（M 很小）时，普通 GEMM 的"准备时间"比"计算时间"还长，像开大卡车送一个包裹。专用小 M kernel 就像换小面包车，启动快、浪费少。`qkv_bmm` 则是"三个快递合并成一车送"。
+- **对你有什么影响**：在 5090 / DGX Spark 这类 sm120 显卡上跑 Inkling2-Mini，短序列（decode 阶段）吞吐会明显提升。
 
-- **代码层面**：`csrc/layernorm_kernels.cu`、`csrc/layernorm_quant_kernels.cu` 等文件里，把 `blockIdx.x * hidden_size`、`input_stride` 等索引计算从 `int` 改为 `int64_t`，避免大 batch 下溢出。
-- **新手概念课堂**：int32 像一个只能数到 21 亿的计数器，超过就"绕回负数"。int64 能数到 9 百亿亿，够用了。CUDA kernel 里所有"元素下标 × 步长"的乘法都要警惕。
-- **对你有什么影响**：普通用户感知不到，但在超大 batch、超长序列场景下避免了静默的内存越界（可能导致乱码输出或崩溃）。
+### 8. [Perf][Model] Inkling 2: keep the TMA k_group_partials path on SM12x
+- **代码层面**：`linear.py` 的 `k_group_partials` 去掉 `and not sm120` 的限制，让 SM120 也能走 TMA 路径；但针对 SM120 把 `block_n` 限制为 64、`num_stages` 设为 2，因为 SM120 每 block 共享内存约 99 KiB，两个 48 KiB stage 刚好塞下。
+- **新手概念课堂**：TMA 是 GPU 上的"专用搬运工"，比普通 load 高效。但每个 SM 的"仓库"（共享内存）有大小限制，SM120 的仓库比数据中心卡小，所以一次只能搬更少、用更少的流水线级数。
+- **对你有什么影响**：SM120 用户不再被排除在 TMA 加速路径之外，但代价是 block 更小——这是硬件约束下的合理权衡。
 
----
+### 9. [CI/Build][NVIDIA] Use PyTorch's cu135 nightly for Rubin
+- **代码层面**：`.buildkite/release-pipeline.yaml` 里 Rubin 构建从 `cuda13.4` builder 切到 `cuda13.5`，删掉 `TRITON_INSTALL_FROM_SOURCE_*` 相关 build-arg；`docker/Dockerfile` 删除 `tools/build_triton_from_source.sh` 的调用和对应 ARG。原因是 PyTorch 已发布 cu135 nightly，不再需要从源码编译 Triton 来绕过 ptxas 对 SM107 的支持问题。
+- **新手概念课堂**：之前因为 ptxas 13.3 不认识 SM107 指令，只能自己编译 Triton；现在上游修好了，就像"零件厂终于生产出标准件，不用自己 3D 打印了"。
+- **对你有什么影响**：普通用户无感知；如果你自己构建 Rubin 镜像，构建流程简化、不再需要从源码编 Triton。
 
-### 4. [Bugfix][Multimodal] Convert PIL video frames to RGB like PIL images (#69089)
+### 10. [Model] Hy4-flash Cleanup
+- **代码层面**：`vllm/models/hy_v4/amd/model.py` 大幅重构 `load_weights`——把权重映射抽到 `vllm/models/hy_v4/weight_utils.py`（`HYV4_MLP_MAPPER`、`HYV4_WEIGHTS_MAPPER`），删掉本地缓存的 `split_expert_params_mapping` 和一堆内联逻辑；`test_tensor_schema.py` 里非 CUDA 平台从"断言抛 `NotImplementedError`"改为 `pytest.skip`。
+- **新手概念课堂**：这是典型的"重构清理"——把一大坨 if-else 权重加载逻辑拆成声明式的映射表。就像把"手写 200 行 if 判断"换成"查表"，可读性和可维护性都大幅提升。
+- **对你有什么影响**：Hy4-flash 在非 CUDA 平台上的测试行为从"报错"变成"跳过"，CI 更干净；权重加载逻辑更清晰，后续加新变体更容易。
 
-- **代码层面**：`vllm/multimodal/parse.py` 新增 `_convert_pil_frames`，在 `_get_video_with_metadata` 里对 list/tuple 形式的 PIL 帧做 `convert_image_mode(frame, "RGB")`；测试 `test_parse.py` 覆盖 L/LA/RGBA/P 四种模式。
-- **新手概念课堂**：PIL 图片有"调色板模式（P）""灰度（L）""带透明（RGBA）"等，模型通常只吃 3 通道 RGB。之前图片会转，视频帧忘了转，导致通道数不一致报错。
-- **对你有什么影响**：传视频帧列表做多模态推理时，非 RGB 的帧不再报错，行为与传单张图片一致。
+### 11. [Bugfix] Whisper prompt conditioning: use the real `<|startofprev|>` token
+- **代码层面**：Whisper 的 prompt 条件化之前用错了特殊 token（`<|prev|>`），改为正确的 `<|startofprev|>`；`get_generation_prompt` 保证 decoder prompt 布局是 `get_prompt_ids(prompt)` + SOT 序列，不再额外前置 decoder start token。新增 `test_decoder_prompt_layout` 验证。
+- **新手概念课堂**：Whisper 用特殊 token 告诉模型"接下来是上一段的上下文"。用错 token 就像给信封贴错邮票——模型看不懂，prompt 就白传了。
+- **对你有什么影响**：用 Whisper 做语音转写时，你传的 `prompt`（词汇/风格提示）终于真正影响解码结果，转写准确率（尤其专有名词）会提升。
 
----
+### 12. [Model] Add Inkling 2 Mini
+- **代码层面**：新增 `vllm/models/inkling2/` 完整模型实现（attention、MoE、loop、sconv 等），配套 CUDA kernel（`csrc/inkling2/allreduce_conv_mix.cu` 等），CI 新增 `models_basic.yaml` 里的 Inkling2 测试任务和 DGX Spark sm12 专项任务。`allreduce_conv_mix.cu` 把 `kTokenThreads` 从常量改为模板参数，支持 hidden size 4608 和 2304 两种。
+- **新手概念课堂**：这是一个"新模型全家桶"——模型结构、kernel、测试、CI 一次性到位。`kTokenThreads` 模板化就像"一件衣服做成可调节尺码"，同一套 kernel 服务两个不同 hidden size 的模型变体。
+- **对你有什么影响**：你现在可以直接用 vLLM 跑 Inkling 2 Mini，且在消费级 sm120 显卡上有专门优化和 CI 保障。
 
-### 5. [Bugfix][Multimodal] Size rope_2d DP vision outputs from the spatial grid (#68739)
+### 13. [Bugfix] Normalize native GTE positional embedding configuration
+- **代码层面**：`vllm/model_executor/models/config.py` 的 `verify_and_update_model_config` 里，如果 GTE 模型的 `position_embedding_type` 是 `None`，显式设为 `"rope"`。
+- **新手概念课堂**：有些模型配置文件里"位置编码类型"字段是空的，代码后续要读它就会 `None` 崩溃。这行代码就是"填空默认值"——没写就按 RoPE 处理。
+- **对你有什么影响**：加载某些 GTE 模型不再因为配置缺字段而报错，开箱即用。
 
-- **代码层面**：`vllm/model_executor/models/vision.py` 里 `run_dp_sharded_mrope_vision_model` 对 `rope_2d` 类型，输出长度从"t×h×w"改为按"空间网格 + 时间池化"计算（如 Kimi-K2.5 的 MoonViT 会把 t 帧池化成 1 帧）；测试新增 `SimpleTemporalPoolVisionModel` 验证。
-- **新手概念课堂**：视频有"时间维度"，有些视觉塔会把多帧"平均"成一帧（temporal pooling）。如果还按"帧数 × 高 × 宽"算输出长度，就会多分配内存、对不齐。
-- **对你有什么影响**：使用 Kimi-K2.5 等带时间池化的视觉模型做视频推理时，DP（数据并行）切分不再出错。
+### 14. [Model] Add masked_token_ids to never sample given tokens
+- **代码层面**：`ModelConfig` 新增 `masked_token_ids: list[int] | None`，在采样前把这些 token 的 logits 设为 `-inf`；`__post_init__` 校验 token id 范围（`[-1, VOCAB_SIZE]` 之外报错）；`SpeculativeConfig` 拒绝与"有损"投机解码方法（`fly`、`synthetic`）组合，因为那些方法不保证严格按 logits 采样。新增 `tests/v1/sample/test_masked_token_ids.py`。
+- **新手概念课堂**：`masked_token_ids` 就像考试时的"排除选项"——正确答案只可能在剩下的选项里。实现上是在 softmax 前把不要的 token 概率压到 0。
+- **对你有什么影响**：你可以强制模型永不输出某些 token（比如 lm_head 的 padding 行、占位符），提升生成可控性；但注意它和某些投机解码方法不兼容，配置时会报错提醒。
 
----
+### 15. [Bugfix][Multimodal] Return 400 for unreadable embedding payloads
+- **代码层面**：`vllm/renderers/embed_utils.py` 的 `safe_load_prompt_embeds` 等函数在解码失败时抛 `VLLMValidationError`（带 `param="image_embeds"` 等），HTTP 层转成 400；内存耗尽等服务器侧问题仍是 500。文档 `multimodal_inputs.md` 补充说明。新增测试验证"传垃圾 base64 返回 400 且服务仍健康"。
+- **新手概念课堂**：客户端传了坏数据（400）和服务器自己崩了（500）是两回事。之前坏 base64 可能触发 500，让用户以为是服务器问题；现在明确告诉用户"你传的数据读不了"。
+- **对你有什么影响**：调 API 传 embedding 时，如果格式错了会收到清晰的 400 和参数名，方便你定位；服务端不会因为一个坏请求挂掉。
 
-### 6. [Perf][Multimodal] Encoder CUDA graphs for the Qwen3-Omni / Qwen3-ASR audio tower (#68831)
+### 16. [Bugfix][Security] Complete input-bound hardening left incomplete by PR #51447
+- **代码层面**：`SamplingParams` 新增 `VLLM_MAX_STOP_STRINGS`（4）、`VLLM_MAX_STOP_TOKEN_IDS`（128）、`VLLM_MAX_NUM_BAD_WORDS`（128）、`VLLM_MAX_BAD_WORDS_TOTAL_TOKENS`（1024）上限；`stop_token_ids` 改为 `frozenset` 加速查找；`stop` 字符串去重；`CompletionRequest` / `ChatCompletionRequest` 的 pydantic 模型同步加 `max_length` 校验；DeepSeek V3.2 的 tool-message 处理从线性扫描改为更高效的结构。文档 `security.md` 补充说明。
+- **新手概念课堂**：这些参数都是用户可控的，如果允许传 100 万个 stop string，服务器光解析就能被拖垮（DoS）。给每个字段加上限就像"自助餐每人限拿 4 个盘子"——防止一个人把整个餐厅吃空。
+- **对你有什么影响**：正常使用无感知；如果你之前传了超过 128 个 stop_token_ids，现在会收到明确的 400 错误。部署公网服务时建议按文档调低这些上限。
 
-- **代码层面**：`vllm/v1/cudagraph/` 下的 encoder graph manager 扩展到音频塔；`Qwen3ASRForConditionalGeneration`、`Qwen3OmniMoeThinkerForConditionalGeneration` 注册 graph 支持；文档 `docs/design/cuda_graphs_multimodal.md` 新增音频表格；测试 `test_audio_encoder_cudagraph.py` 对比 eager 与 graph 的 logprobs。
-- **新手概念课堂**：CUDA Graph 像"录制宏"——把一串 GPU 操作录下来，下次一键重放，省掉每次"按按钮"（kernel launch）的开销。音频塔的 conv 前端仍在 eager 跑（因为形状变化大），transformer 层和输出投影走 graph。
-- **对你有什么影响**：Qwen3-ASR / Qwen3-Omni 音频推理吞吐提升；注意 token budget 最小是 104（一个 attention window，约 8 秒音频），太短的音频可能享受不到 graph 收益。
+### 17. [XPU] skip not applied tests in lora/test_layer.py and test_config.py on XPU
+- **代码层面**：`.buildkite/intel_jobs/lora_intel.yaml` 加 `--deselect` 跳过 XPU 不支持的 GLM5next KDA 测试；`test_tensor_schema.py` 把 XPU 不支持模型列表扩展为 `{GLM-5.3-Flash, Hy4-preview, Hy4}`；`test_config.py` 给 CUDA-only 测试加 `skipif(current_platform.is_xpu())`；`vllm/models/glm5next/__init__.py` 删除"XPU 直接 raise NotImplementedError"的 import 期检查，改为测试层跳过。
+- **新手概念课堂**：之前 GLM5next 在 XPU 上一 import 就炸，导致整个测试文件都跑不了。改成"测试层跳过"就像"门口贴个告示：本房间 XPU 用户请勿入内"，而不是"整栋楼锁死"。
+- **对你有什么影响**：XPU 用户跑测试时不再被无关的 CUDA-only 用例卡住；GLM5next 在 XPU 上仍不支持，但错误更友好。
 
----
+### 18. [Perf][Model] Export ZAYA1 CCA prefill checkpoints
+- **代码层面**：`vllm/model_executor/models/zaya.py` 的 `ZayaCCA._mix_with_state` 支持 `MambaPrefillCheckpointMetadata`——在 prefill 进行到指定 offset 时，把 CCA 状态导出到 checkpoint slot，供后续复用。新增测试 `test_zaya_cca_exports_state_at_checkpoint` 验证"checkpoint 状态 == 单独跑该 offset 的结果"。
+- **新手概念课堂**：CCA（连续卷积注意力）的状态像"滚动窗口的历史摘要"。prefill 很长时，中间状态以后可能被复用（比如分块 prefill、投机解码），所以在特定位置"存个档"能省掉重算。
+- **对你有什么影响**：ZAYA1 模型在长 prefill + 复用场景下性能提升；普通用户无感知，但如果你做分块推理或前缀缓存，这个能力很关键。
 
-### 7. [Bugfix] Honor batch invariance in manual FlashInfer norm fusion (#68600)
+### 19. [Bugfix][EC Connector] Keep marker token embeddings for pruned Qwen3-VL video on encoder-only instances
+- **代码层面**：Qwen3-VL 视频裁剪（`video_pruning_rate`）后，时间戳和视觉标记 token 的 embedding 必须保留；之前 encoder-only 实例（`mm_encoder_only=True`）会把这些标记丢掉，导致和完整模型输出不一致。修复让 encoder-only 路径也产出这些标记 embedding。新增 `test_encoder_only_matches_full_model_for_pruned_video` 对比两者输出。
+- **新手概念课堂**：视频裁剪就像"删减电影片段"，但片头的时间戳字幕不能删——下游模型靠它对齐时间。encoder-only 实例之前把字幕也删了，导致结果不对。
+- **对你有什么影响**：用 encoder-only 部署 Qwen3-VL 做视频推理时，输出和完整模型一致，不再出现"裁剪后结果漂移"的问题。
 
-- **代码层面**：`vllm/models/common/ops/fused_allreduce_rms_norm.py` 里手动融合的 all-reduce + RMSNorm 路径，在 `VLLM_BATCH_INVARIANT=1` 时改用与 batch size 无关的规约顺序；新增测试 `test_fused_allreduce_rms_norm_batch_invariant.py`，验证"单条 vs 大批量"结果 bit-exact。
-- **新手概念课堂**：Batch Invariance 指"同样一条输入，不管跟谁一起 batch，输出必须完全一样"。GPU 的并行规约顺序会随 batch 大小变，导致浮点结果有微小差异。对需要可复现的评测/审计场景很关键。
-- **对你有什么影响**：开启 `VLLM_BATCH_INVARIANT=1` 后，TP + FlashInfer 融合路径也能保证 batch 无关性，代价是可能略慢。
-
----
-
-### 8. [Attention][FlashInfer] DiffusionGemma: mixed causal/bidirectional attention on TRTLLM-Gen (#62516)
-
-- **代码层面**：`vllm/v1/attention/backends/flashinfer.py` 新增 `_fill_mixed_causal_metadata`，支持"同一 batch 里有的请求 causal、有的 bidirectional"；SM100/SM103 上文本-only 场景默认启用；测试 `test_mixed_causal_attn.py` 覆盖 bool/int32 两种 causal dtype 和 CUDA graph padding。
-- **新手概念课堂**：Causal 是"只能看前面"（生成模型），bidirectional 是"前后都能看"（编码/扩散模型）。DiffusionGemma 需要混合模式，就像一条流水线上有的工位只能看上游、有的能看全图。
-- **对你有什么影响**：Blackwell（SM100）上跑 DiffusionGemma 文本任务会自动走这个后端，性能更好；其他 GPU 仍走旧路径。
-
----
-
-### 9. [Bugfix][DSv4.1] Read the DSpark draft's native mega MoE flag from its layers (#69023)
-
-- **代码层面**：`vllm/models/deepseek_v41/nvidia/specialized_decode/runtime/draft.py` 里，判断条件从 `backbone.use_native_mega_moe` 改为 `backbone.layers[0].ffn.use_native_mega_moe`。
-- **新手概念课堂**：模型对象上的属性可能"过期"——`backbone.use_native_mega_moe` 是构造时的快照，而真正决定行为的是每一层 FFN 的配置。就像查"公司是否远程办公"要看每个部门的实际政策，而不是总部的初始公告。
-- **对你有什么影响**：DSv4.1 的 latency_specialized 解码后端在 mega MoE 配置下不再误报错。
-
----
-
-### 10. [HiSparse] Support HY4 Flash (#69026)
-
-- **代码层面**：`vllm/model_executor/layers/attention/sparse_mla_attention.py` 里，当 `sliding_window is not None` 时不再把 `vllm_config` 传给 index group builder（即滑动窗口层不参与 HiSparse）；`vllm/models/hy_v4_flash/nvidia/model.py` 放宽 KV transfer 限制，只允许 `HiSparseConnector`；测试验证滑动窗口层 `hisparse_cache is None`。
-- **新手概念课堂**：HiSparse 是一种"稀疏 KV 缓存"技术，只对全注意力层有意义。滑动窗口层的 KV 由滑动窗口管理器管，HiSparse 去接管会"抢错地盘"导致首次写入失败。
-- **对你有什么影响**：HY4 Flash 模型在 gfx942 上可以用 HiSparse + 滑动窗口共存，不再启动即崩。
-
----
-
-### 11. [Feature] Encoder-only attention hooks for model-owned layouts (#67798)
-
-- **代码层面**：新增 `EncoderOnlyAttention(attn_backend=...)` 允许模型显式指定 encoder 注意力后端；`FlexAttentionMetadataBuilder._make_metadata` 开放 hook；新增 `register_model_config` 让插件注册模型配置；测试 `test_encoder_only_attention_hooks.py` 覆盖 backend 选择、警告日志、metadata 构建。
-- **新手概念课堂**：以前 vLLM 的 attention 后端是"全局选一个"，现在允许"模型自己说我这个 encoder 要用 FlexAttention"。就像公司统一采购电脑，但设计部门可以申请特定型号。
-- **对你有什么影响**：模型插件作者（如自定义视觉塔）可以精确控制 encoder 注意力实现，不用改 vLLM 核心。
-
----
-
-### 12. [Benchmark] Add decisions backends to vllm bench serve (#68760)
-
-- **代码层面**：`vllm/benchmarks/lib/endpoint_request_func.py` 新增 `vllm-systemone` 和 `openai-decisions` 两个 backend；文档 `docs/benchmarking/cli.md` 新增 "Decisions Benchmark" 章节；测试 `test_decisions_request_func.py` 验证请求 schema。
-- **新手概念课堂**：`vllm bench serve` 是压测工具，"backend"决定它怎么构造请求。新增的 decisions backend 用于压测"结构化决策"接口（一次请求问多个 yes/no/score 问题）。
-- **对你有什么影响**：想压测 `/v1/systemone` 或 `/v1/decisions` 接口，现在有官方支持，不用自己写脚本。
-
----
-
-### 13. [Bugfix][ROCm] Apply the e4m3fnuz KV-scale factor for compressed-tensors (#66586)
-
-- **代码层面**：`vllm/model_executor/layers/quantization/compressed_tensors/compressed_tensors.py` 的 `CompressedTensorsKVCacheMethod.process_weights_after_loading` 里，检测 `current_platform.is_fp8_fnuz()`，对 k/v scale 乘 2（fnuz 范围是 e4m3 的一半），并保证幂等（第二次调用不重复乘）；测试覆盖 fnuz/非 fnuz、有/无 q_scale 四种组合。
-- **新手概念课堂**：e4m3fnuz 是 AMD 的 FP8 格式，最大表示值约 240，而 NVIDIA e4m3 是 448。同样一个 scale 值，在 fnuz 上需要乘 2 才能表达同样的实际范围。就像"摄氏度和华氏度"的换算系数。
-- **对你有什么影响**：AMD GPU 上用 compressed-tensors 的 FP8 KV cache，数值精度恢复正常，不再悄悄偏移。
-
----
-
-### 14. [ROCm][MoE] Add AITER Triton MXFP8 MoE backend for gfx942 (#61214)
-
-- **代码层面**：新增 `vllm/model_executor/layers/fused_moe/experts/aiter_mxfp8_moe.py`（`AiterTritonMxfp8ExpertsMonolithic`）；oracle 在 gfx942 + MXFP8 时自动选它；文档 `moe_kernel_features.md` 和 `online.md` 更新；`recipes/models/tencent/Hy4-preview.yaml` 更新 MI325X 部署说明。
-- **新手概念课堂**：MXFP8 是"每 32 个元素共享一个指数"的 8 位浮点格式，比 FP8 per-tensor 更省显存。之前 gfx942 不支持，只能反量化成 BF16，权重占 196 GiB；现在原生跑，只要 109 GiB。
-- **对你有什么影响**：AMD MI325X 上跑 MXFP8 大模型，显存占用大降，吞吐提升 13-23%，GSM8K 精度不变。
-
----
-
-### 15. [Bugfix][ROCm] benchmark_moe: keep HIP_VISIBLE_DEVICES for Ray (#65935)
-
-- **代码层面**：`benchmarks/kernels/benchmark_moe.py` 里，不再把 `HIP_VISIBLE_DEVICES` 改写成 `ROCR_VISIBLE_DEVICES`，而是删掉 `CUDA_VISIBLE_DEVICES`（因为 vLLM import 时把 HIP 复制过去了），让 Ray 自己按 worker 设置 `HIP_VISIBLE_DEVICES`。
-- **新手概念课堂**：Ray 用 `HIP_VISIBLE_DEVICES` 给每个 worker 分配 GPU。如果代码提前把它改名成 `ROCR_VISIBLE_DEVICES`，Ray 就"找不到"该给谁分卡了。就像快递员按门牌号送货，你把门牌号改了，他就迷路。
-- **对你有什么影响**：ROCm 上用 Ray 跑 MoE benchmark，多 worker 能正确分到不同 GPU，不再全部挤在 0 号卡。
-
----
-
-### 16. [Bugfix][Model Loader] Prefetch the whole checkpoint into every node's page cache (#68351)
-
-- **代码层面**：`vllm/model_executor/model_loader/weight_utils.py` 的 `_prefetch_all_checkpoints`，把"按全局 rank 切分文件"改为"按节点内 local rank 切分"，保证每个节点都读全量文件；新增测试 `test_prefetch_checkpoints.py` 验证 1/2/4 节点 × 1-4 rank 的组合。
-- **新手概念课堂**：page cache 是"每台机器自己的内存缓存"。两台机器不会共享缓存，所以每台都得把文件读一遍。之前按全局 rank 切，节点 A 可能只读了 1/4 文件，剩下 3/4 没预热，加载就慢。
-- **对你有什么影响**：多机部署大模型时，权重加载时间更稳定，不再出现"某些节点特别慢"。
-
----
-
-### 17. [ROCm][Perf][Muse Spark] Run the pooler and unpooler through the default ROCm GEMM dispatch on gfx942 and gfx950 (#63725)
-
-- **代码层面**：`vllm/models/muse_spark/amd/model.py` 新增 `_pooling_uses_default_gemm()`，在 CDNA3/CDNA4（gfx942/gfx950）上 pooler/unpooler 用 `UnquantizedLinearMethod`（走 AITER 默认 GEMM），其他 CDNA 版本仍用 `MuseSparkTorchLinearMethod`；测试参数化 4 个 CDNA 版本。
-- **新手概念课堂**：pooler 是把 hidden state 压成 embedding 的小线性层。在支持 AITER 的 GPU 上，用默认 GEMM 调度比强制 PyTorch linear 更快。就像"本地有高速公路就走高速，没有就走国道"。
-- **对你有什么影响**：Muse Spark 模型在 MI300X/MI325X/MI355X 上 embedding 阶段更快。
-
----
-
-### 18. [ROCm] Warm the AITER FA extend kernels from the attention backend (#68012)
-
-- **代码层面**：`vllm/v1/attention/backends/rocm_aiter_fa.py` 新增 `AiterFlashAttentionExtendKernel`，实现 `get_warmup_keys` / `compile_many`，在 `enable_jit_warmup` 时注册到 `JitWarmupRegistry`；滑动窗口层跳过 warmup；测试验证注册、跳过、调用次数。
-- **新手概念课堂**：AITER 的 FA kernel 是 JIT 编译的，第一次调用要编译几百毫秒。Warmup 就是"服务启动时先把各种形状的 kernel 编译好"，避免第一个用户等半天。就像餐厅开门前先把常用菜备好。
-- **对你有什么影响**：ROCm 上 AITER FA 的首 token 延迟（TTFT）更稳定，不会因为形状没预热而抖动。
-
----
-
-### 19. [ROCm][Bugfix] Keep non-float all-reduces off AITER custom all-reduce (#60839)
-
-- **代码层面**：`vllm/distributed/device_communicators/aiter_custom_all_reduce.py` 的 `should_custom_ar` 里，dtype 不是 float32/float16/bfloat16 时直接返回 False；测试用 int8 tensor 验证走 fallback 路径且结果正确。
-- **新手概念课堂**：AITER 的自定义 all-reduce kernel 只支持浮点。int8（比如 FP8 权重的原始字节）传进去会崩。加个 dtype 白名单，非浮点就走通用 all-reduce。
-- **对你有什么影响**：ROCm 上跑 FP8 量化模型时，权重同步不再因为 dtype 是 int8 而崩溃。
-
----
-
-### 20. [Doc] Make CUDA 13 the default in the GPU install guide (#67572)
-
-- **代码层面**：`docs/getting_started/installation/gpu.cuda.inc.md`、`docs/contributing/README.md`、`docs/contributing/ci/nightly_builds.md` 里把默认 CUDA 版本从 12.9 改为 13.0（cu130），安装命令改为用 `wheels.vllm.ai/<version>/<variant>` 索引。
-- **新手概念课堂**：CUDA 版本决定 PyTorch 和 vLLM 的二进制兼容性。装错版本会报 "undefined symbol" 或 "no kernel image"。文档现在明确"默认 cu130"，并给出查所有变体的 URL。
-- **对你有什么影响**：新装 vLLM 默认拉 CUDA 13.0 wheel；如果你的驱动太老（不支持 CUDA 13），需要按文档手动选 cu128 等变体。
+### 20. [Doc] Add vLLM security review skill
+- **代码层面**：新增 `.agents/skills/review-vllm-security/SKILL.md`，定义安全审查工作流（追踪输入→快速筛查→查兄弟路径→确认资源释放），按变更类型（端点/多模态/模型加载/结构化输出/引擎/缓存/部署/日志）列出检查清单；`pr-checklist/SKILL.md` 里加链接，要求涉及不可信输入、共享资源、权限的 PR 走安全审查。
+- **新手概念课堂**：这是给 AI agent（和人类 reviewer）的"安全检查清单"。就像飞机起飞前的 checklist——不靠记忆，靠清单保证不漏项。
+- **对你有什么影响**：如果你给 vLLM 提 PR 且涉及用户输入处理，会被要求对照这个清单自查；对普通用户意味着 vLLM 的安全审查流程更系统化，公网部署更放心。
 
 ## sglang
-## 💡 今日关键词（放在最前面！）
+## 💡 今日关键词
 
-- **关键词：Day-0 模型支持（Day-0 Support）**
-  - 一句话解释：模型官方发布当天，推理框架就能跑起来，不用等社区慢慢适配。
-  - 为什么社区在关注：Commit 1 里 Inkling-2 系列刚发布，SGLang 就同时覆盖 NVIDIA、AMD、TPU 三种硬件，说明"模型-框架-硬件"三方协同的节奏越来越快，推理框架的竞争已进入"首发即支持"阶段。
-  - 对新手意味着什么：如果你在学模型部署，光会写模型不够，能快速把新模型跑通在多硬件上才是稀缺能力；关注各家 cookbook 的写法是很好的入门路径。
+- **关键词：GPU 数值一致性（CPU/GPU 浮点差异）**
+  - 一句话解释：同样的数学公式在 CPU 和 GPU 上算出来的结果可能不完全一样，尤其是 `pow`、`exp` 这类函数。
+  - 为什么社区在关注：Commit 1 发现 Qwen-Image-Edit 在"编码器卸载到 CPU"和"常驻 GPU"两种模式下生成的图不一样，根因就是 RoPE 频率表在 CPU 上初始化、搬到 GPU 后没有重建。随着大模型显存越来越紧张，"部分组件卸载"成为常态，这类隐蔽的数值差异会越来越多。
+  - 对新手意味着什么：如果你做推理部署，一定要知道"同一份权重、不同执行路径"可能输出不同结果。学会写"逐位对比测试"是必备技能。
 
-- **关键词：采样惩罚（Sampling Penalty）架构重构**
-  - 一句话解释：控制模型"别重复说同一个词"的那套机制（frequency/presence/repetition penalty），今天被大改了两轮。
-  - 为什么社区在关注：Commit 2 把惩罚历史从"batch 级"搬到"每请求独立池"，Commit 17 把散落的 penaltylib 合并成一个模块。这说明采样层正在为"PD 分离、请求重调度、dLLM"等新场景让路。
-  - 对新手意味着什么：采样不只是"softmax 之后取最大值"，它和调度、KV 管理、请求生命周期深度耦合，是理解推理系统的好切入点。
+- **关键词：int32 溢出（大模型 LoRA 服务）**
+  - 一句话解释：32 位整数最大约 21 亿，当张量元素超过这个数量，行偏移计算就会"绕回"变成负数或错误值。
+  - 为什么社区在关注：Commit 2 里 LoRA 的 chunked SGMV kernel 用 int32 计算行偏移，当 `(rows-1)*width > 2^31` 时最后一行读错位置。大模型 + 大词表 + 大 batch 的场景越来越常见。
+  - 对新手意味着什么：写 kernel 或索引计算时，先问自己"这个索引最大能到多少"。养成用 `int64` 处理"元素总数"类索引的习惯。
 
-- **关键词：扩散模型（Diffusion）内存自治**
-  - 一句话解释：图像/视频生成模型开始自己规划"哪些组件放显存、哪些放内存、哪些流式加载"。
-  - 为什么社区在关注：Commit 5 引入基于 warmup 校准的组件驻留规划，Commit 9 给 AMD 写 Triton 卷积核复现 MIOpen 数值顺序，Commit 12 修 fp16 LoRA 溢出。扩散推理正从"能跑"走向"在消费级卡上跑得好"。
-  - 对新手意味着什么：多模态生成是当下最热的方向之一，显存规划和数值精度是绕不开的两座山。
+- **关键词：投机解码（Speculative Decoding）重构**
+  - 一句话解释：用小模型"猜"多个 token，大模型一次性验证，加速生成。
+  - 为什么社区在关注：今天有 4 个 commit（9、10、15、16）都在重构投机解码的 verify 流程，把 EAGLE、NGRAM、DSpark 三种 draft 算法的"接受逻辑"统一成 `VerifyAccept` 结构。这是典型的"多实现收敛到统一抽象"的工程演进。
+  - 对新手意味着什么：投机解码是当前 LLM 推理加速最热门的方向之一。理解"draft-verify-accept"三段式是入门必修课。
 
-- **关键词：异构硬件适配（AMD / TPU / Rust Server）**
-  - 一句话解释：同一份代码要跑在 NVIDIA、AMD、Google TPU 上，还要有 Rust 写的高性能服务端。
-  - 为什么社区在关注：Commit 1、9、14 都涉及多后端；Commit 15 给 Rust server 加 peer token 鉴权。说明 SGLang 正在从"研究工具"变成"生产级多硬件平台"。
-  - 对新手意味着什么：只学 CUDA 已经不够，Triton、HIP、跨平台抽象层是加分项。
+- **关键词：内存卸载与映射保留（Offload / mmap）**
+  - 一句话解释：显存不够时把权重放到 CPU 内存，需要时再搬回 GPU；"映射保留"指不复制数据、直接复用 checkpoint 文件在内存里的映射。
+  - 为什么社区在关注：Commit 11 让 diffusion 在主机内存紧张时保留 mmap 映射而不是复制权重，Commit 1 处理卸载后的数值一致性。说明"低显存部署"已是 diffusion 推理的核心痛点。
+  - 对新手意味着什么：学会用 `mmap`、`torch.load(mmap=True)`、理解 pinned memory 与 page cache，是部署大模型的基本功。
 
-- **关键词：缓存一致性（Cache Coherence）**
-  - 一句话解释：缓存里"我以为数据在"和"数据真的在"必须一致，否则会读到脏数据或永远不备份。
-  - 为什么社区在关注：Commit 19 修 HiCache 换后端后"存在性信念"没清空导致永不备份，Commit 20 把 HiSparse 所有释放路径统一。缓存系统的 bug 往往最隐蔽、最难查。
-  - 对新手意味着什么：学缓存系统要先学"状态机思维"——每个缓存条目有哪些状态、状态迁移由谁触发。
+- **关键词：AMD / AITER 后端适配**
+  - 一句话解释：AITER 是 AMD 的 AI 算子库，类似 NVIDIA 的 cuBLAS/cuDNN 生态位。
+  - 为什么社区在关注：Commit 6、7 都是 AMD 相关修复（KV layout 读取、MoE topk 断言移除），说明 SGLang 正在认真做 ROCm 支持，异构计算不再是"能跑就行"。
+  - 对新手意味着什么：如果你只有 AMD 显卡，现在入门 LLM 推理的门槛在降低；同时"跨后端一致性"是很好的练手方向。
 
 ---
 
 ## 🧪 重要知识点 & 动手实验
 
-- **知识点 1：采样惩罚的"每请求独立池"（Commit 2 + 17）**
-  - **是什么**：模型生成时，惩罚机制需要记住"这个请求已经输出过哪些 token"。以前这份历史挂在 batch 上，现在每个请求自己持有一个 `penalty_index`，指向调度器里的 `PenaltyStatusPool`。
-  - **为什么重要**：在 PD 分离（Prefill/Decode 分开部署）和请求被"撤回重调度"（retract）时，batch 会重组，如果历史挂在 batch 上就会丢。挂在请求上，请求被 retract 再 re-prefill 时历史还在，惩罚才正确。不懂这个，你会在长对话里看到模型突然开始重复。
-  - **动手试试**：
-    ```bash
-    # 起一个带 repetition_penalty 的服务
-    python -m sglang.launch_server --model-path Qwen/Qwen2.5-0.5B-Instruct --port 30000
-    ```
-    ```python
-    import requests
-    # 故意让模型重复，观察惩罚是否生效
-    payload = {
-        "text": "The the the the the the",
-        "sampling_params": {"max_new_tokens": 20, "repetition_penalty": 1.5}
-    }
-    print(requests.post("http://localhost:30000/generate", json=payload).json())
-    # 再把 repetition_penalty 改成 1.0 对比
-    ```
-  - **预期结果**：penalty=1.5 时输出明显更多样，1.0 时容易复读。改完后你能说清"惩罚历史存在哪、什么时候被重置"。
+### 知识点 1：CPU 与 GPU 的浮点数值差异（Commit 1）
 
-- **知识点 2：JIT 编译的"架构族"目标（Commit 14，sm_100f）**
-  - **是什么**：NVIDIA Blackwell 有 sm_100、sm_103 等具体架构，也有"族"目标 sm_100f。编译成族目标，一份二进制能跑整个家族，代价是放弃某些架构专属指令。
-  - **为什么重要**：数据中心里 GPU 型号混杂（B200/GB200/B300），如果每个型号单独编译，缓存命中率低、启动慢。用族目标能"一次编译，多处运行"。这是一个典型的"通用性 vs 极致性能"权衡。
-  - **动手试试**：
-    ```bash
-    # 查看当前 GPU 架构
-    nvidia-smi --query-gpu=name,compute_cap --format=csv
-    # 在 SGLang 里切换 JIT 架构策略（需支持该环境变量）
-    export SGLANG_JIT_CUDA_ARCH_POLICY=family   # 或 specific
-    python -c "from sglang.kernels.jit.utils.arch import resolve_compile_arch; print(resolve_compile_arch())"
-    ```
-  - **预期结果**：`specific` 打印类似 `sm_100`，`family` 在 Blackwell + CUDA≥12.9 下打印 `sm_100f`。你就理解了"编译目标"不是唯一值。
+- **是什么**：`torch.pow`、`torch.exp` 在 CPU 和 GPU 上的实现不同，最后一位有效数字可能不同。对 RoPE 这种"频率表"敏感的位置编码，微小差异会逐层放大成肉眼可见的图像差异。
+- **为什么重要**：模型卸载（offload）时权重在 CPU 初始化再搬到 GPU，如果不重建频率表，结果就和常驻 GPU 不一致。这类 bug 极难排查，因为 loss/精度指标看起来都正常。
+- **动手试试**：
+```python
+import torch
 
-- **知识点 3：CUDA 缓存分配器的"保留 vs 已分配"（Commit 6）**
-  - **是什么**：`torch.cuda.memory_reserved()` 是 PyTorch 向驱动申请的总量，`memory_allocated()` 是真正给张量用的量，差值就是"空闲但没还"的缓存块。Commit 6 删掉了"每处理一张图就检查并 empty_cache"的逻辑。
-  - **为什么重要**：`empty_cache()` 会同步设备、释放所有空闲块，非常慢。每次预处理都调用会让 Qwen-VL 吞吐暴跌。但完全不释放又会让 reserved 只增不减。正确做法是"在正确时机释放"，而不是"每步都检查"。
-  - **动手试试**：
-    ```python
-    import torch
-    x = torch.randn(1024, 1024, device="cuda")
-    print("allocated:", torch.cuda.memory_allocated() / 2**20, "MB")
-    print("reserved :", torch.cuda.memory_reserved() / 2**20, "MB")
-    del x
-    print("after del allocated:", torch.cuda.memory_allocated() / 2**20, "MB")
-    print("after del reserved :", torch.cuda.memory_reserved() / 2**20, "MB")  # 没降！
-    torch.cuda.empty_cache()
-    print("after empty reserved:", torch.cuda.memory_reserved() / 2**20, "MB")  # 降了
-    ```
-  - **预期结果**：`del` 后 allocated 降为 0 但 reserved 不变，`empty_cache()` 后 reserved 才降。你就明白为什么"频繁 empty_cache"是性能杀手。
+dim, theta = 128, 10000.0
+idx = torch.arange(0, dim, 2, dtype=torch.float32)
 
-- **知识点 4：LoRA 在 autocast 下的 dtype 陷阱（Commit 12）**
-  - **是什么**：fp16 的 LoRA 权重遇到 bf16 激活时，如果直接 `x.to(fp16) @ A.to(fp16)`，DiT 里超过 65504 的激活会溢出成 inf，输出变 NaN（黑图）。修法是"在激活的 dtype 里算"。
-  - **为什么重要**：混合精度是标配，但"谁的 dtype 说了算"很容易搞错。fp16 的动态范围只有 ±65504，bf16 有 ±3.4e38，扩散模型的激活值经常超 fp16 范围。
-  - **动手试试**：
-    ```python
-    import torch
-    big = torch.tensor([70000.0], dtype=torch.float32)
-    print("fp16:", big.to(torch.float16))   # inf
-    print("bf16:", big.to(torch.bfloat16))  # 70016 左右，没溢出
-    # 模拟 LoRA：x(fp32大值) @ A(fp16)
-    x = torch.full((1, 4), 70000.0)
-    A = torch.randn(4, 4, dtype=torch.float16)
-    print("错法:", (x.to(torch.float16) @ A))  # 可能 nan
-    print("对法:", (x.to(torch.bfloat16) @ A.to(torch.bfloat16)))
-    ```
-  - **预期结果**：看到 fp16 溢出成 inf/nan，bf16 正常。你就理解了 Commit 12 的 `_lora_compute_dtype` 在防什么。
+# CPU 上算
+inv_cpu = 1.0 / (theta ** (idx / dim))
 
-- **知识点 5：缓存"存在性信念"与换后端的一致性（Commit 19）**
-  - **是什么**：HiCache 会缓存"某页数据在存储后端存在"的判断（`storage_existence_cache`），避免重复备份。换后端时如果不清空，旧后端的"存在"信念会让新后端永远收不到这页数据。
-  - **为什么重要**：这是典型的"缓存失效"bug——状态描述的是旧世界，但代码以为还是新世界。类似问题在 CDN、DNS、数据库连接池里都会出现。
-  - **动手试试**：
-    ```python
-    # 用最小例子模拟"信念缓存"的坑
-    existence = {}          # page_id -> bool
-    backend = "A"
-    def backup(page):
-        if existence.get(page): return "skip (以为已存在)"
-        existence[page] = True
-        return f"backed up to {backend}"
-    print(backup(1))        # backed up to A
-    backend = "B"           # 换后端，但没清 existence
-    print(backup(1))        # skip —— bug!
-    existence.clear()       # 修复：换后端时清空
-    print(backup(1))        # backed up to B
-    ```
-  - **预期结果**：第二行输出 "skip"，说明信念缓存导致新后端漏备份；清空后正常。对应 Commit 19 的一行 `cache.storage_existence_cache.clear()`。
+# 搬到 GPU 后再算（模拟 offload 后重建）
+inv_gpu = (1.0 / (theta ** (idx.cuda() / dim))).cpu()
+
+print("bitwise equal:", torch.equal(inv_cpu, inv_gpu))
+print("max abs diff:", (inv_cpu - inv_gpu).abs().max().item())
+```
+- **预期结果**：`bitwise equal` 很可能是 `False`，`max abs diff` 是一个极小的数（1e-8 量级）。这说明"公式一样≠结果一样"，需要用 `torch.equal` 而不是 `allclose` 来验证一致性。
+
+### 知识点 2：int32 溢出与安全索引（Commit 2）
+
+- **是什么**：`torch.int32` 最大值是 2,147,483,647。当 `rows * width` 超过它，`row * width` 的乘法结果会溢出。
+- **为什么重要**：LoRA 服务里 `permutation` 表用 int32 存物理行号，乘上 `width`（hidden size）后可能超界，导致读到错误内存——不报错，只是结果全错。
+- **动手试试**：
+```python
+import torch
+
+rows, width = 65538, 32768
+print("rows*width =", rows * width, "> 2^31?", rows * width > 2**31)
+
+idx_i32 = torch.tensor([rows - 1], dtype=torch.int32)
+offset_i32 = idx_i32 * width          # 溢出！
+idx_i64 = idx_i32.to(torch.int64)
+offset_i64 = idx_i64 * width          # 正确
+
+print("int32 offset:", offset_i32.item())
+print("int64 offset:", offset_i64.item())
+print("expected    :", (rows - 1) * width)
+```
+- **预期结果**：`int32 offset` 会变成负数或错误值，`int64 offset` 与 `expected` 一致。这就是 Commit 2 里 `.to(tl.int64)` 修复的本质。
+
+### 知识点 3：投机解码的"draft-verify-accept"三段式（Commit 9/10/15）
+
+- **是什么**：draft 模型先猜 `k` 个 token，target 模型一次前向验证这 `k` 个位置，接受最长的正确前缀，再额外吐一个 bonus token。
+- **为什么重要**：这是当前 LLM 推理加速最主流的手段。理解 `accept_lens`、`accept_index`、`accept_mask` 三个量的含义，就能读懂所有投机解码实现。
+- **动手试试**（纯 CPU，模拟接受逻辑）：
+```python
+import torch
+
+# 假设 draft 猜了 4 个 token，target 验证后每行接受长度不同
+accept_lens = torch.tensor([2, 4, 1])          # bs=3，含 bonus token
+width = 4
+tokens = torch.arange(3 * width).reshape(3, width)  # 每行的候选 token
+
+# 构造 accept_mask（参考 VerifyAccept.accept_mask 的实现）
+positions = torch.arange(width)
+mask = positions[None, :] < accept_lens[:, None]
+print("mask:\n", mask)
+
+# 取出每行被接受的 token
+accepted = [tokens[i][mask[i]].tolist() for i in range(3)]
+print("accepted:", accepted)
+```
+- **预期结果**：第 0 行取前 2 个、第 1 行取全部 4 个、第 2 行取第 1 个。这就是 `VerifyAccept.accept_tokens()` 的核心逻辑。
+
+### 知识点 4：Triton kernel 里的 stride 与缓冲区容量（Commit 4）
+
+- **是什么**：张量的 `stride(0)` 是"沿第 0 维走一步跨多少个元素"。缓冲区可能分配了 `capacity=8` 步，但本次 verify 只用 4 步，若 kernel 里用 `cache_steps=4` 当 stride 就会读错行。
+- **为什么重要**：Mamba 的状态缓存、KV cache 都是"预分配大缓冲区、按需使用"的模式。混淆"容量"和"使用量"是经典 bug。
+- **动手试试**：
+```python
+import torch
+
+capacity, steps = 8, 4
+buf = torch.zeros(2, capacity, 3, 4)   # [batch, capacity, heads, dim]
+print("stride(0) =", buf.stride(0))    # 每跨一个 batch 走 capacity*3*4 步
+
+# 错误写法：用 steps 当 stride
+wrong_base = buf.data_ptr() + 1 * steps * 3 * 4 * buf.element_size()
+# 正确写法：用 stride(0)
+correct_base = buf.data_ptr() + 1 * buf.stride(0) * buf.element_size()
+print("wrong == correct?", wrong_base == correct_base)
+```
+- **预期结果**：`False`。当 `capacity != steps` 时两者不等，这正是 Commit 4 修复的 bug。
+
+### 知识点 5：mmap 与内存映射保留（Commit 11）
+
+- **是什么**：`safetensors` 加载时用 `mmap` 把文件映射到虚拟内存，不真正复制数据。当系统内存紧张时，可以"释放映射"而不是"复制一份 CPU 权重"。
+- **为什么重要**：diffusion 模型动辄几十 GB，复制一份 CPU 权重可能直接 OOM。保留映射意味着"需要时从磁盘页缓存重新读"，牺牲一点延迟换内存安全。
+- **动手试试**：
+```python
+import torch, tempfile, os
+from safetensors.torch import save_file, load_file
+
+with tempfile.TemporaryDirectory() as d:
+    p = os.path.join(d, "w.safetensors")
+    save_file({"w": torch.randn(1024, 1024)}, p)
+
+    # 普通加载：数据进内存
+    w1 = load_file(p)["w"]
+    # mmap 加载：惰性映射（safetensors 内部默认用 mmap）
+    w2 = load_file(p, device="cpu")["w"]
+    print("shape:", w2.shape, "dtype:", w2.dtype)
+    print("file size MB:", os.path.getsize(p) / 1e6)
+```
+- **预期结果**：文件大小约 4MB，加载后内存占用不会翻倍（因为 mmap 共享页缓存）。如果你用 `psutil` 观察进程 RSS，会发现 mmap 加载的增量远小于文件大小。
 
 ---
 
 ## 🔥 重要更新
 
-- **Commit 2 + 17（采样惩罚重构）**：惩罚历史从 batch 迁到每请求池，并合并 penaltylib。这是为 PD 分离、请求 retract、dLLM 等新场景打地基，影响所有用 penalty 的线上服务。
-- **Commit 5（扩散组件驻留规划）**：基于 warmup 校准自动决定哪些组件常驻显存，直接决定消费级卡能不能跑大扩散模型，是 2/4 系列的核心一步。
-- **Commit 14（sm_100f 族编译）**：Blackwell 多型号混部场景下，一份 JIT 产物服务整个架构族，显著提升缓存命中率和启动速度。
-- **Commit 15（Rust server peer token 鉴权）**：`/internal/peer` 端点加 token，只有本次启动的 rank 知道，堵住内部端点被外部调用的安全漏洞。
+1. **Commit 13 `[Feat] diffusion: Request watchdog and /health 503`**：新增 `--request-time-limit`，请求超时后 `/health` 返回 503 并 dump 所有线程栈。这是生产环境"卡死检测"的关键能力，对运维影响巨大。
+
+2. **Commit 9/10/15/16 投机解码统一重构**：把 EAGLE/NGRAM/DSpark 的 verify-accept 逻辑收敛为 `VerifyAccept` + `TargetVerify` + `commit_verify_accept`。这是架构级重构，未来新增 draft 算法会容易得多。
+
+3. **Commit 11 `[Fix] diffusion: Preserve mapped component weights during low-memory offload`**：低内存卸载时保留 mmap 映射，避免复制整份权重导致 OOM。对消费级显卡跑 diffusion 是实打实的体验提升。
+
+4. **Commit 12 `[Perf] diffusion/lingbot-video-moe: compute timestep modulation once per sample`**：把 `(B*S, D)` 的 modulation 计算降为 `(B, D)`，序列越长收益越大，是典型的"消除冗余计算"优化。
 
 ---
 
 ## 📋 逐条解读
 
-### 1. [Doc] cookbook: Add the Inkling-2 model introductions and hardware tables (#52042)
-- **代码层面**：改的是 `docs/cookbook/.../Inkling-2-Mini.mdx` 和 `Inkling-2-Small.mdx`。加了硬件支持表格（B300/GB300、B200/GB200、H200、RTX 5090、DGX Spark、MI350X、TPU7x）、day-0 支持公告、模型介绍（Mini 26B 总参 5.4B 激活，Small 594B 总参 17B 激活、1M 上下文）。还把 AMD 镜像从 `radixark/...` 改成 `lmsysorg/...`。
-- **新手概念课堂**：MoE（混合专家）就像一家大公司有 128 个部门，每个 token 只找最相关的 8 个部门干活，所以"总人数很多但每次只动用一小部分"。这就是"总参 594B、激活 17B"的意思——显存要装下所有人，但算力只花在少数人身上。
-- **对你有什么影响**：想部署 Inkling-2 的用户现在有一张"哪块卡用哪个镜像"的对照表，不用再猜。
+### 1. [Fix] diffusion: Rebuild the Qwen2.5-VL vision RoPE table on the GPU so Qwen-Image-Edit gives the same image with the encoder offloaded
+- **代码层面**：在 `qwen2_5vl_vision.py` 里自定义了一个 `Qwen2_5VLVisionRotaryEmbedding`，加了一个 `recompute_on_device_change` 开关；`forward` 时如果发现 `inv_freq` 的设备或 dtype 变了，就在当前设备上重新计算频率表。`qwen_image.py` 里在创建 pipeline 时给非 Edit-2509 的模型打开这个开关。
+- **新手概念课堂**：RoPE 就像给每个位置发一个"频率身份证"，让模型知道 token 在序列里的相对位置。这个身份证是在 CPU 上批量印好的，搬到 GPU 后如果直接复用，可能和"在 GPU 上现场印"的版本有细微差别——就像同一份菜谱，两个厨师放盐的克数差 0.01g，最后味道就不一样。
+- **对你有什么影响**：如果你用 Qwen-Image-Edit 并开启了编码器卸载（省显存），以前生成的图和常驻 GPU 模式不一样，现在一致了。Edit-2509 特意保留旧行为，因为它的一致性基准是用旧表生成的。
 
-### 2. [Feat] sampling: Count penalty history right after sampling in a per-request pool (#52035)
-- **代码层面**：`schedule_batch.py` 删掉 `Req.penalty_cumulated_len`，新增 `Req.penalty_index`；新增 `PenaltyStatusPool`（在 `penalties.py` 里）；`decode.py` 的 PD 分离路径在构造 fake prefill batch 时调用 `penalty_status_pool.alloc/reset_history`；`dllm/algorithm/base.py` 显式拒绝 dLLM 使用 penalty。
-- **新手概念课堂**：把"惩罚历史"想象成每个用户的"已说词汇本"。以前词汇本放在"当前这批人共用的桌子上"，换一批人桌子就清了；现在每人自带一本，被叫去别的房间（retract）再回来，本子还在。
-- **对你有什么影响**：长对话、PD 分离部署下，repetition_penalty 的行为更稳定，不会因为调度重组而"失忆"。
+### 2. [Fix] kernels/lora: Use int64 token row offsets in the csgmv shrink and expand kernels
+- **代码层面**：在 `chunked_sgmv_expand.py` 和 `chunked_sgmv_shrink.py` 里，把 `tl.load(permutation + ...)` 的结果显式 `.to(tl.int64)`。新增了一个 10GB 显存占用的回归测试，构造 `(65538-1)*32768 > 2^31` 的场景。
+- **新手概念课堂**：`permutation` 表存的是"逻辑 token → 物理行号"的映射，像电影院座位号。int32 只能表示到 21 亿号座位，当影院有 21 亿个座位时，最后几排的座位号算出来就"绕回"到前面的排了。
+- **对你有什么影响**：在多 LoRA 大模型服务里，当 batch × 序列长度 × hidden size 特别大时，以前可能读到错误的 LoRA 权重行，输出乱码；现在修好了。普通小规模使用感知不到。
 
-### 3. [Test] disaggregation: Run the Kimi-Linear PD+DCP prefill at hybrid checkpoint level 3 (#51979)
-- **代码层面**：测试文件 `test_kimi_linear_pd_dcp4.py` 的 PREFILL_ARGS 加了 `--hybrid-cache-checkpoints-level 3`。
-- **新手概念课堂**：Mamba 类模型的"状态"像游戏存档。默认只存"关卡结束"的存档（level 2），但测试会重发同一 prompt 期望"从中间继续"，所以需要每章都存（level 3）。
-- **对你有什么影响**：纯测试改动，普通用户无感；但说明混合缓存（attention + Mamba）的 checkpoint 粒度是可配置的。
+### 3. [Fix] diffusion/nomas: Run each requested video of a /v1/videos job as its own sample
+- **代码层面**：`nomas.py` 的 pipeline config 新增 `supports_sequential_multi_output_inference()` 返回 `True`；新增测试验证 `num_outputs_per_prompt=2` 时跑两次独立的 sample（seed 42 和 43），而不是一次生成两个。
+- **新手概念课堂**：Nomas 的"latent session"一次只能装一个样本，就像一台洗衣机一次只能洗一件衣服。你要求洗两件，正确做法是分两次洗，而不是硬塞进去。
+- **对你有什么影响**：调用 `/v1/videos` 时设置 `n=2`，以前可能报错或行为异常，现在会顺序生成两个视频，且每个 seed 独立递增，结果可复现。
 
-### 4. [Test] layers: Expect Kimi QKV on the KDA sharding group (#51974)
-- **代码层面**：`test_repeated_batched_parallel_groups.py` 里简化了 `size` 的计算，去掉 `QKVParallelLinear` 的特殊分支——Kimi 的 KDA 所有投影（含 QKV）都在同一 sharding group 上。
-- **新手概念课堂**：张量并行像把一个大矩阵切成几块分给几张卡。以前 QKV 可能切法和别的层不一样，现在统一了，测试期望也随之更新。
-- **对你有什么影响**：测试对齐实现，无用户可见变化。
+### 4. [Fix] mamba: Use the intermediate state buffer stride during Triton verify
+- **代码层面**：`mamba_ssm.py` 的 `_selective_scan_update_kernel` 把参数 `cache_steps` 改名为 `stride_intermediate_batch`，调用处传 `intermediate_states_buffer.stride(0)` 而不是 `cache_steps`。新增测试参数化 `capacity=[4,8]`、`tree=[False,True]` 验证行 stride。
+- **新手概念课堂**：缓冲区像一排预分配的储物柜，`capacity=8` 个柜子，这次只用了 4 个。如果 kernel 以为"每行占 4 个柜子"去算偏移，就会读到隔壁 batch 的数据。正确做法是问缓冲区"你每行实际占多少柜子"（`stride(0)`）。
+- **对你有什么影响**：使用 Mamba 模型 + 投机解码（EAGLE tree verify）时，中间状态缓存可能被读错，导致生成质量下降或结果不稳定；现在修复。
 
-### 5. [Feat] diffusion: Plan component residency from calibrated warmup records (2/4) (#37917)
-- **代码层面**：`auto_residency.py` 从空壳变成完整规划器：引入 `optimize_placement`、`PlacementOption`、VRAM 预留比例（measured 5%、extrapolated 10%、最小 4GiB、上限 20%）、pinned H2D 带宽估计（24 GiB/s）等，根据 warmup 校准记录决定每个组件是 RESIDENT / COMPONENT_OFFLOAD / LAYERWISE_OFFLOAD。
-- **新手概念课堂**：像给行李箱打包——先量好每件衣服多大（校准），再决定哪些随身带（常驻显存）、哪些托运（offload 到内存）、哪些压缩袋抽真空（逐层流式）。预留空间是"给机场安检留的余量"。
-- **对你有什么影响**：扩散模型在显存有限的卡上能自动选最优放置策略，减少 OOM 和手动调参。
+### 5. [Fix] moe/tuning: Tune NemotronH's non-gated relu2 MoE with its real shape
+- **代码层面**：`common_utils.py` 新增 `get_moe_activation()` 返回 `(activation, is_gated)`；`calculate_shard_intermediate_size` 增加 `is_gated` 参数，非 gated 时不再乘 2。benchmark 脚本对非 gated SiLU 模型直接报错退出。配置文件命名加入 `is_gated` 区分。
+- **新手概念课堂**：gated MoE 的 w1 里"门"和"上投影"叠在一起，宽度是 `2*intermediate`；non-gated 只有上投影，宽度是 `intermediate`。用错宽度调出来的 kernel 配置就像给 40 码的脚买 42 码的鞋——能穿但不合脚。
+- **对你有什么影响**：NemotronH 这类 non-gated MoE 模型以前可能用了错误的 tuning 配置，性能不达标；现在用真实 shape 调优。普通用户感知是"推理更快了"。
 
-### 6. [Perf] qwen-vl: Stop checking the CUDA cache after every image preprocess (#51867)
-- **代码层面**：`qwen_vl.py` 删掉 `_release_preprocess_cache()` 及常量 `_PREPROCESS_CACHE_RELEASE_BYTES`，两处调用点移除；对应单测整段删除。
-- **新手概念课堂**：`empty_cache()` 像"每次做完一道菜就把整个厨房擦一遍"——干净但极慢。正确做法是"做完一桌菜再擦"。
-- **对你有什么影响**：Qwen-VL 多图预处理吞吐提升，延迟降低；显存 reserved 可能比以前高一点，但这是正常缓存行为。
+### 6. [Fix] [AMD] aiter: Read the KV layout of the pool wrapped by HybridLinearKVPool
+- **代码层面**：`aiter_backend.py` 的 `_kv_cache_is_vectorized_5d` 改为先判断 `has_full`，只要 full 或 sliding_window 子池存在就取对应 view，不再要求"必须有 sliding_window 才取 view"。新增 Qwen3.5-0.8B（hybrid linear attention）的 GSM8K 测试。
+- **新手概念课堂**：`HybridLinearKVPool` 是个"套娃"——外面一层是混合池，里面包着 full attention 和 sliding window 两个子池。AITER 后端以前只会在"有 sliding window"时往里看，遇到"只有 full"的混合池就看不到真正的 KV 布局。
+- **对你有什么影响**：在 AMD MI300X/MI355X 上跑 Qwen3.5 这类 hybrid linear attention 模型，以前可能因为读错布局而 decode 出错；现在正常。
 
-### 7. [Fix] scheduler: Hold a capped chunk's unfinished rest in the prefill budget (#50955)
-- **代码层面**：`schedule_policy.py` 的 `_update_prefill_budget` 加 `commit_unfinished` 参数，`_add_chunked_req` 在"chunk 被截断且设了 chunked_req_limit"时传 True；`prefill_budget.py` 的 `reserve` 在 `commit_unfinished` 时把"未完成部分 + 延迟的 max_new_tokens"计入 `total_offset`；`SWAPrefillBudget` 对纯 SWA 池特殊处理。
-- **新手概念课堂**：预算是"这轮 prefill 还能塞多少 token"。被截断的请求还剩一大截，如果不提前占预算，后面 decode 时 KV 就不够，会把前面的请求挤掉。这叫"预留"。
-- **对你有什么影响**：开启 chunked prefill + chunk limit 时，长请求更不容易被中途打断或 OOM。
+### 7. [Fix] [AMD] moe/topk: stop AITER rejecting apply_routed_scaling_factor_on_output
+- **代码层面**：`topk.py` 里删掉一行 `assert not apply_routed_scaling_factor_on_output, "Not implemented"`。
+- **新手概念课堂**：`apply_routed_scaling_factor_on_output` 是 MoE 的一个开关——把 routed scaling factor 乘在输出上而不是 gate 上。AITER 后端以前直接断言"不支持"，现在放开。
+- **对你有什么影响**：AMD 用户启用某些 MoE 模型（需要这个开关）时不再启动失败。改动极小但解锁了一个配置组合。
 
-### 8. [Fix] diffusion: Fall back from K/V-gather for a cross-attention key mask (#51620)
-- **代码层面**：`attention/layer.py` 的 `_kv_gather_unsupported_reason` 新增 `query_len` 参数，当 `attn_mask.shape[1] != query_len`（cross-attention 的 key mask 长度等于 key 数而非 query 数）时返回不支持原因，走 Ulysses 回退路径；测试补了对应用例。
-- **新手概念课堂**：K/V-gather 的并行方式假设"mask 每一行对应一个 query"。cross-attention 里 mask 描述的是"哪些 key 可见"，长度对不上，硬用会算错。
-- **对你有什么影响**：带 cross-attention mask 的扩散模型在 SP（序列并行）下不再算错，auto 模式自动回退。
+### 8. [Perf] diffusion: Avoid boolean indexing in placeholder validation
+- **代码层面**：`gemma_3.py` 和 `qwen_vl.py` 里把 `inputs_embeds[mask].numel()` 这种"布尔索引取元素个数"改成 `mask.sum().item()` 或 `mask[..., 0].sum().item()`。
+- **新手概念课堂**：布尔索引 `x[mask]` 会真的把满足条件的元素"挑出来"生成新张量，很慢；而 `mask.sum()` 只是数一数有多少个 True，快得多。就像清点人数，不需要把每个人拉出来排队，只需数举手的人。
+- **对你有什么影响**：多模态编码器每次前向都做这个校验，改成 O(1) 后省掉一次大张量拷贝。对长序列、大 batch 的多模态推理有可感知的加速。
 
-### 9. [Perf] [AMD] diffusion: Run BigVGAN vocoder's convolutions in MIOpen's summation orders from Triton (#51934)
-- **代码层面**：新增 `kernels/ops/diffusion/conv/` 目录，`conv1d_fp64acc_triton.py` 用 Triton 实现"FP32 输入、FP64 累加、按 MIOpen naive solver 顺序求和"的 conv1d，`depthwise_conv1d_triton.py` 实现 depthwise conv 和转置 depthwise；在 `__init__.py` 注册三个 kernel（仅 HIP）。
-- **新手概念课堂**：浮点加法不满足结合律，`(a+b)+c ≠ a+(b+c)`。要"复现"另一个库的结果，必须用同样的累加顺序。MIOpen 那个 kernel 慢（4-5ms/次），Triton 版只要几十微秒，且结果逐位一致。
-- **对你有什么影响**：AMD 上跑 BigVGAN 语音合成快很多，且输出与参考实现数值一致。
+### 9. [Refactor] speculative: One target-verify ring for EAGLE, NGRAM and DSpark
+- **代码层面**：`dspark_worker_v2.py` 里删掉散落的 grammar mask、watermark、logprob 处理代码，统一走 `TargetVerify.prepare(...)` 返回的 `verify` 对象，再调 `verify.grammar_mask.apply()`、`verify.watermark.apply()`。大量 import 被清理。
+- **新手概念课堂**：以前三种 draft 算法各自写一套"验证后处理"逻辑，像三家分店各有一套收银流程；现在统一成一个"总收银台"（`TargetVerify`），新店开张直接复用。
+- **对你有什么影响**：使用投机解码时行为更一致，新算法接入更快。普通用户感知不到，但社区贡献者受益。
 
-### 10. [Fix] diffusion/media: Keep request URLs out of download errors (#51962)
-- **代码层面**：`vision.py` 新增 `_read_media_source` 包装器，把 `requests.RequestException` 重新分类为 Timeout/TooManyRedirects/HTTPError/ConnectionError，只保留 HTTP 状态码，丢弃原始 URL 和 prepared request；`raise ... from None` 切断异常链；`load_video` 拆出 `_read_video_source`。
-- **新手概念课堂**：异常对象会"抱着"原始请求（含 URL、可能含签名 token）。直接抛给用户等于泄露。就像快递单上印了你的完整地址，退货时要把地址撕掉。
-- **对你有什么影响**：错误信息更安全，不会把用户请求的 URL 暴露在日志或 API 响应里。
+### 10. [Refactor] speculative: Describe verify accepts with VerifyAccept and commit them in one call
+- **代码层面**：新增 `sampling/verify_accept.py`，定义 `VerifyAccept`（`tokens`、`accept_lens`、可选 `accept_index`）和 `commit_verify_accept()`。`accept_tokens()` / `accept_mask()` 提供统一视图。watermark adapter 里的 `append_accept_tokens` 被替换为 `commit(accept)`。
+- **新手概念课堂**：`VerifyAccept` 是一张"验货单"——记录"哪些 token 被接受了、接受了几个"。`commit` 是把这张单子一次性入账到惩罚历史和水印上下文，而不是各处零散地改状态。
+- **对你有什么影响**：带 penalty（重复惩罚等）或 watermark 的投机解码，以前可能因为提交顺序问题出现状态不一致；现在原子化提交。
 
-### 11. [Fix] diffusion: Keep request content out of automatic media filenames (#51971)
-- **代码层面**：`sampling_params.py` 删掉基于 prompt 哈希/时间戳生成文件名的逻辑，`kandinsky6_sr.py` 删掉基于源视频名的 `_set_output_file_name` 覆盖；文档说明默认文件名与 prompt/输入媒体名无关，需要可预测名请用 `--output-file-name`。
-- **新手概念课堂**：文件名里带 prompt 哈希，等于把用户输入"编码"进文件名，可能被下游工具记录、泄露。安全原则：默认不把用户内容写进任何可观测标识。
-- **对你有什么影响**：默认输出文件名变成随机/固定格式，不再反映 prompt；需要可预测名请显式指定。
+### 11. [Fix] diffusion: Preserve mapped component weights during low-memory offload
+- **代码层面**：`component_residency_strategies.py` 的 `_load_component` 增加判断：CUDA + 独立显存 + 无 snapshot + 主机内存不足 + 全文件映射 + dtype 匹配时，保留 mmap 视图不复制。`component_manager.py` 的 `HostPinBudget` 传入 `node_local_ranks` 分摊预算。文档补充了详细说明。
+- **新手概念课堂**：普通卸载像"把书从书架搬到桌上"，需要额外空间；保留映射像"在书上贴个书签，需要时按书签翻回原页"——不占额外空间，但翻页慢一点。当桌子（主机内存）不够时，书签是唯一选择。
+- **对你有什么影响**：低内存机器跑 diffusion 时，卸载编码器/VAE 不再因为"复制一份 CPU 权重"而 OOM。代价是后续 H2D 可能稍慢。文档同时说明：breakable CUDA graph 要求 DiT 常驻，不能同时开 DiT 卸载。
 
-### 12. [Fix] diffusion: Compute fp16 LoRA deltas in the activations' dtype (#51494)
-- **代码层面**：`lora/linear.py` 新增 `_lora_compute_dtype`：fp16 adapter + 非 fp16 激活时，用 autocast dtype 或激活 dtype 计算；`_add_lora_delta_in_gemm` 要求 target/rows/b 三者 dtype 一致才 `addmm_`；`fused_lora_delta` 的 zero 张量和 matmul 都按该 dtype。
-- **新手概念课堂**：fp16 的"量程"只有 ±65504，bf16 有 ±3.4e38。DiT 激活经常超过 6 万，转 fp16 就变 inf，再算就 NaN，图就黑了。
-- **对你有什么影响**：Wan 等扩散模型用 fp16 LoRA 不再出黑图/NaN。
+### 12. [Perf] diffusion/lingbot-video-moe: compute timestep modulation once per sample
+- **代码层面**：`lingbot_video_moe.py` 里 `temb6` 从 `(B*S, 6D)` 降为 `(B, 6D)`，block 里用 `(temb6 + scale_shift_table).unsqueeze(1)` 广播；只有启用 `LINGBOT_VIDEO_GATED_RESIDUAL` 时才 expand 成 `(B, S, D)`。`norm_out_modulation` 同样只算一次。
+- **新手概念课堂**：timestep modulation 只依赖时间步 `t`，和序列位置无关。以前每个 token 都算一遍同样的东西，像给全班每人发一份一模一样的通知；现在只印一份贴在墙上。
+- **对你有什么影响**：LingBot 视频生成模型在长序列（视频 token 多）时明显加速。测试验证了输出与旧实现数值一致。
 
-### 13. [Fix] scheduler: Handle repeated and retried memory release and resume requests (#51398)
-- **代码层面**：`weight_updater.py` 的 `release_memory_occupation` 改为"只处理尚未释放的 tag，每个 tag 释放成功后才加入 `offload_tags`"；`resume_memory_occupation` 改为"只处理已释放的 tag，每个 tag resume 成功后才 discard"。测试补了重复/重试场景。
-- **新手概念课堂**：以前是"先全部标记为已释放，再逐个释放"，中途失败就状态错乱。现在像"每做完一件事才打一个勾"，可重入、可重试。
-- **对你有什么影响**：RL 训练等场景反复 release/resume 显存时更稳定，不会因为重复请求报错或状态错乱。
+### 13. [Feat] diffusion: Request watchdog and /health 503 when a request runs past its limit
+- **代码层面**：新增 `--request-time-limit {SECONDS|TASK=SECONDS}` 参数；`sampling_params.py` 加 `request_task()` 钩子；超时后 dump 所有线程栈、`/health` 返回 503、拒绝新请求。文档新增"Request time limit"章节。
+- **新手概念课堂**：watchdog 像厨房里的定时器——菜做太久就报警，告诉经理"这桌出问题了"，并把当前所有厨师在干什么都记录下来（线程栈）。注意它不"杀"请求，只是标记不健康。
+- **对你有什么影响**：生产部署时，GPU kernel 卡死不再表现为"服务看起来健康但请求永远不返回"。配合负载均衡摘除 + 重启，能快速恢复。注意：队列等待时间不计入。
 
-### 14. [Feat] [NVIDIA] jit: Let a module build for its arch family (sm_100f) instead of the arch-specific target (#51929)
-- **代码层面**：`jit/utils/arch.py` 新增 `CudaArchPolicy`、`get_family_compile_arch`、`resolve_compile_arch`；`compile/cache.py` 的 hash 纳入 arch 策略；新增环境变量 `SGLANG_JIT_CUDA_ARCH_POLICY`（specific/family）。
-- **新手概念课堂**：sm_100f 是"Blackwell 家族通用目标"，像"Windows 通用安装包"vs"某型号专用驱动"。通用包能跑所有 Blackwell，但不能用某些专属指令（比如更大的静态共享内存）。
-- **对你有什么影响**：多型号 Blackwell 混部时 JIT 缓存命中率提升、启动更快；需要极致性能可切回 `specific`。
+### 14. [Perf] diffusion/registry: Skip native discovery for metadata-only lookups
+- **代码层面**：`registry.py` 里 `has_registered_diffusion_model_path`、`_get_config_info`、`get_model_info` 从 `_ensure_registry_initialized()`（会导入所有 pipeline）改为 `load_external_model_package()`（只加载外部包）。`get_model_info` 里 `_PIPELINE_REGISTRY.get` 改为 `get_pipeline_class`（惰性）。
+- **新手概念课堂**：以前查"这个模型叫什么名字"要把整个 pipeline 库都 import 一遍，像查电话簿先把整本书复印一份；现在只翻到那一页。
+- **对你有什么影响**：`sglang` 启动、模型列表查询、配置解析变快，尤其是 import 大量 pipeline 模块的场景。
 
-### 15. [Fix] rust-server: Serve /internal/peer only to the launch's own listeners (#51946)
-- **代码层面**：`rust_server/server.py` 的 `gather_server_endpoints` 给每个 listener 生成 `secrets.token_urlsafe(32)` 的 `peer_token`；Rust 侧 `pyerr_to_status` 新增 `PyPermissionError → PERMISSION_DENIED` 映射；`/internal/peer` 校验 token。
-- **新手概念课堂**：内部端点像"员工通道"，以前谁找到门都能进，现在每个 rank 发一张一次性工牌，只有本次启动的兄弟 rank 知道工牌号。
-- **对你有什么影响**：内部端点不再被外部随意调用，安全性提升；正常多 rank 通信无感。
+### 15. [Refactor] speculative: One definition of logit adjustments and truncated sampling for verify gates
+- **代码层面**：`sampling_batch_info.py` 新增 `adjusts_logits(info, has_grammar)` 和 `need_truncated_sampling(info)` 两个纯函数；`logits_processor.py` 的 `verify_uses_vocab_shards` 改为调用 `adjusts_logits`；`dflash_worker_v2.py` 等改用 `need_truncated_sampling`。
+- **新手概念课堂**：`adjusts_logits` 回答"这次采样会不会改 logits"（有 grammar / penalty / bias / watermark 就会）；`need_truncated_sampling` 回答"会不会截断分布"（top-k/p/min-p）。以前这两个判断散落各处，容易不一致。
+- **对你有什么影响**：投机解码 + 分片词表（vocab shards）的兼容性判断更准确，减少"该走分片却走了全量"或反之的性能损失/正确性问题。
 
-### 16. [Perf] kimi-k3: Order shared-expert side-stream frees on the current stream (#51900)
-- **代码层面**：`kimi_k3.py` 的 `_forward_unfused` 移除 `shared_input.record_stream(self.alt_stream)`，新增 `shared_alt_output` 和 `release_shared_output()`，在非 fine-grained overlap 路径下把释放排到 current stream 上，避免 side stream 上的释放与主 stream 使用竞争。
-- **新手概念课堂**：多 CUDA stream 像多条流水线，A 线用完的零件不能马上回收，因为 B 线可能还在用。`record_stream` 是"告诉分配器这条线也在用"，但顺序错了会提前释放。
-- **对你有什么影响**：Kimi-K3 共享专家路径减少不必要的同步，性能提升且避免潜在 use-after-free。
+### 16. [Refactor] sampling: Build watermark rows per step
+- **代码层面**：`scheduler.py` 的 `run_batch` 里新增 `batch.sampling_info.watermark = build_watermark_rows(batch.reqs, batch.device)`；`SamplingBatchInfo.from_schedule_batch` 不再构建 watermark；`filter_batch` 里删掉 watermark 的过滤逻辑。
+- **新手概念课堂**：水印策略以前在"建 batch"时算一次，但 batch 会动态增删请求（`filter_batch`），导致水印行和请求对不上。现在改成"每次 launch 前按当前 reqs 重建"，像每次开会前重新点名。
+- **对你有什么影响**：使用 watermark（如 Gumbel 水印）时，动态 batch 下不再出现行错位导致的水印失效或误标。
 
-### 17. [Refactor] sampling: Merge penaltylib into one penalties module (#52002)
-- **代码层面**：新建 `sampling/penalties.py`（603 行），把原来分散在 penaltylib 里的 `BatchedPenalizerOrchestrator`、各类 `_BatchedPenalizer` 合并；`apply_scaling_penalties` 用 `torch.compile` 加速。
-- **新手概念课堂**：把散落在多个抽屉里的工具收进一个工具箱，找起来快、改起来不容易漏。`torch.compile` 是把 Python 循环编译成融合 kernel，减少 kernel launch 开销。
-- **对你有什么影响**：代码更易维护；采样惩罚路径可能有小幅性能提升。
+### 17. [Fix] glm5_next: Gather DFlash aux hidden states for every scattered MoE all-to-all backend
+- **代码层面**：`glm5_next.py` 用 `is_moe_input_scattered_across_dp_ranks()` 替代硬编码的四个 backend 判断；新增 `_captures_attn_tp_slices()` 静态方法，根据 `layer.attn_boundary.plan` 判断当前 capture 是否看到的是 ATTN_TP 分片，只有分片时才 `all_gather`。
+- **新手概念课堂**：MoE 的 all-to-all 会把 token 打散到不同 rank，此时 capture 到的 hidden state 是"分片"的，需要 `all_gather` 拼回来。但如果 `--disable-attn-tp-gather` 让 batch 不分片，就不该再 gather，否则重复。
+- **对你有什么影响**：GLM5-Next 使用 DFlash 投机解码 + 各种 MoE all-to-all 后端（DeepEP、Mooncake、Ascend ops 等）时，aux hidden state 收集正确，draft 质量稳定。
 
-### 18. [Doc] diffusion/storage: Prefer workload credentials for S3 uploads (#51987)
-- **代码层面**：文档改为推荐"给 serving workload 分配 IAM role，不设 `SGLANG_S3_ACCESS_KEY_ID/SECRET`，让 Boto3 自动获取临时凭证"；MinIO 等才需显式 endpoint 和 key；说明返回的 URL 不是 presigned。
-- **新手概念课堂**：IAM role 像"员工刷工牌进仓库"，凭证自动轮换；硬编码 access key 像"把钥匙焊在门上"，泄露就完蛋。
-- **对你有什么影响**：按文档部署更安全；私有 bucket 需要自己处理下载鉴权。
+### 18. [Test] transformers: Fix three unit tests that fail on transformers main
+- **代码层面**：`test_hf_transformers.py` 里把 `PretrainedConfig()` 实例改成 `SimpleNamespace`（因为新版 transformers 的 `PretrainedConfig` 对 `rope_scaling` 有校验）；`test_tied_embedding_plan_normalizes` 改用 `AutoModel.from_config(config).tp_plan` 而不是 `config.base_model_tp_plan`。
+- **新手概念课堂**：这是"追上游"的典型——transformers 库升级后 API 行为变了，测试要跟着改。用 `SimpleNamespace` 是为了绕过新校验，只测被测函数本身。
+- **对你有什么影响**：普通用户无感。但对 CI 维护者重要：这些测试在 transformers main 上不再红。
 
-### 19. [Fix] hicache: Clear storage existence beliefs when a new backend is attached (#51254)
-- **代码层面**：`storage_attachment.py` 的 `attach` 在成功挂载新后端后调用 `cache.storage_existence_cache.clear()`；测试新增"detach 后 attach 新后端，确认会重新备份"的用例。
-- **新手概念课堂**：见知识点 5——"我以为数据在旧仓库"的信念不清空，新仓库永远收不到货。
-- **对你有什么影响**：切换 HiCache 存储后端后，数据会正确备份到新后端，不会出现"缓存命中但存储里没有"的诡异现象。
+### 19. [Perf] diffusion/loader: Read remote DiT shard headers concurrently
+- **代码层面**：`loader/utils.py` 的 `_hub_dit_parameter_counts` 在 shard 数 > 1 时用 `ThreadPoolExecutor(max_workers=4)` 并发调 `parse_safetensors_file_metadata`（每个是一次 Hub range request）。测试用 `Barrier(2)` 验证两个 shard 确实并发读取。
+- **新手概念课堂**：safetensors 文件头包含参数元数据，读它是一次网络请求。多个 shard 串行读像"一个一个打电话问"，并发读像"同时发微信问"。
+- **对你有什么影响**：从 HuggingFace Hub 加载多 shard 的 DiT（如大视频模型）时，参数统计阶段更快。注意：只并发"读 header"，不并发"下载权重"。
 
-### 20. [Refactor] hisparse: Route every allocator free through one path that releases the HiSparse mapping (#51252)
-- **代码层面**：`allocator/hisparse.py` 抽出 `HiSparseAllocatorBase` 基类，统一 `available_size`、`alloc_logical_only`、`alloc_decode`、`_extend_device_buffer` 等；所有 free 走同一路径，确保释放时同时清理 `full_to_hisparse_device_index_mapping`。
-- **新手概念课堂**：HiSparse 有两套索引——逻辑索引和物理设备槽位，靠一张映射表对应。如果 free 时只还了逻辑索引没清映射，下次分配会拿到"看起来空闲但映射还指着旧数据"的槽，读到脏数据。
-- **对你有什么影响**：HiSparse 长跑更稳定，减少内存泄漏和脏读；代码结构更清晰，便于后续扩展。
+### 20. [Fix] cuda-graph: Initialize Breakable backend flag in prefill test fixture
+- **代码层面**：`test_prefill_cuda_graph_runner.py` 的 fixture 里补一行 `runner._is_breakable_backend = isinstance(backend, BreakableCudaGraphBackend)`。
+- **新手概念课堂**：测试 fixture 手动构造 runner 对象时，漏初始化了一个布尔标志，导致后续代码读到未定义属性或走错分支。就像组装家具时漏装一个螺丝，看起来能用但一受力就散。
+- **对你有什么影响**：纯测试修复，普通用户无感。但它提醒我们：手动 mock 对象时，要对照 `__init__` 补齐所有状态字段。
 
 ---
 > 🤖 Generated by [daily-llm-tracker](https://github.com/ball-out-of-tune/daily-llm-tracker)
